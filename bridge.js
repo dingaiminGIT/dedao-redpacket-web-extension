@@ -3,7 +3,6 @@
   if (window.__ddRedpacketBridge) return;
   window.__ddRedpacketBridge = true;
   const C = window.DDRedpacketCore;
-  const recentPath = '/api/pc/blade/v2/recent';
   const articlePath = '/pc/bauhinia/pc/article/info';
   async function request(path, data) {
     const csrf = document.cookie.split('; ').find(s => s.startsWith('csrfToken='))?.slice(10) || '';
@@ -22,20 +21,32 @@
     const user = await request('/api/pc/user/info');
     const state = window.__INITIAL_STATE__ || {};
     if (!user.uid_hazy || !state.uid) throw Error('请先登录得到网页版，再打开知识红包');
-    return { account: String(user.uid_hazy), uid: Number(state.uid) };
+    return { account: String(user.uid_hazy) };
   }
   async function execute(command, args) {
     if (command === 'context') return { account: (await context()).account };
-    if (command === 'recent') {
+    if (command === 'inbox-context') {
       const ctx = await context();
       if (ctx.account !== args.account) throw Error('账号已切换，请重新打开知识红包');
-      const data = await request(recentPath, { page_size: 20, max_id: args.cursor || 0, product_type: '', filter_product_type: true, uid: ctx.uid, uid_hazy: ctx.account });
-      if (!Array.isArray(data.list)) throw Error('学习记录格式已变化');
-      return { items: data.list.map(C.candidate).filter(Boolean), count: data.list.length, has_more: data.has_more, timestamp: data.timestamp };
+      const group = await request('/api/hades/v1/group/has', { category: 'bauhinia' });
+      if (!C.articleId(group.uid)) throw Error('无法取得当前账号标识，请重新登录得到网页');
+      if ((await context()).account !== ctx.account) throw Error('账号已切换，请重新打开知识红包');
+      return { account: ctx.account, uid: group.uid };
     }
     if (command === 'article') {
-      if (!C.enid(args.enid)) throw Error('文章链接无效');
-      const data = await request(articlePath, { detail_id: args.enid, with_perm_info: true });
+      let token = args.enid;
+      if (!C.enid(token)) {
+        if (!C.articleId(args.articleId) || !C.clean(args.title)) throw Error('文章标识无效');
+        const search = await request('/api/search/v2/pc/searchallarticle', { content: C.clean(args.title), hl_num: 0, page: 1, size: 20, type: 0, request_id: '' });
+        const matches = (search.list || []).filter(row => C.clean(row.title) === C.clean(args.title) && C.enid(row.extra?.token));
+        for (const match of matches.slice(0, 5)) {
+          const data = await request(articlePath, { detail_id: match.extra.token, with_perm_info: true });
+          if (Number(data.article_id) === Number(args.articleId)) return C.article(data, { ...args, enid: match.extra.token });
+        }
+        throw Error('暂未匹配到对应网页文章，已保留为待核验');
+      }
+      const data = await request(articlePath, { detail_id: token, with_perm_info: true });
+      if (C.articleId(args.articleId) && Number(data.article_id) !== Number(args.articleId)) throw Error('文章编号不匹配，已停止打开');
       return C.article(data, args);
     }
     if (command === 'current') {

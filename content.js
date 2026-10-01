@@ -45,13 +45,13 @@
   </style>
   <button class="launch" aria-haspopup="dialog" aria-controls="dd-rp-dialog" aria-expanded="false">知识红包</button>
   <dialog aria-modal="false" id="dd-rp-dialog" aria-labelledby="dd-rp-title"><div class="shell">
-    <header><div class="top"><div><h1 id="dd-rp-title">知识红包</h1><p class="intro">最近学习 · 课程红包</p></div><button class="close" aria-label="关闭知识红包">×</button></div>
+    <header><div class="top"><div><h1 id="dd-rp-title">知识红包</h1><p class="intro">已领取 · 课程红包</p></div><button class="close" aria-label="关闭知识红包">×</button></div>
     <div class="actions"><button class="primary refresh">刷新红包</button><button class="secondary toggle-add" aria-expanded="false" aria-controls="dd-rp-add">添加链接</button><button class="secondary collect" hidden>收录当前文章</button><button class="quiet cancel" hidden>停止</button></div></header>
-    <div class="tools"><div class="search-row"><input class="search" type="search" aria-label="搜索文章或课程" placeholder="搜索文章或课程" autofocus><button class="secondary filter-toggle" aria-expanded="false" aria-controls="dd-rp-filters">筛选</button></div><div class="filters" id="dd-rp-filters" hidden><select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select><select class="status-filter" aria-label="筛选状态"><option value="active">有效红包</option><option value="all">全部记录</option><option value="unknown">待核验</option><option value="expired">权益已失效</option></select><select class="sort" aria-label="排序"><option value="expiry">即将到期优先</option><option value="recent">最近学习优先</option></select></div>
+    <div class="tools"><div class="search-row"><input class="search" type="search" aria-label="搜索文章或课程" placeholder="搜索文章或课程" autofocus><button class="secondary filter-toggle" aria-expanded="false" aria-controls="dd-rp-filters">筛选</button></div><div class="filters" id="dd-rp-filters" hidden><select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select><select class="status-filter" aria-label="筛选状态"><option value="active">有效红包</option><option value="all">全部记录</option><option value="unknown">待核验</option><option value="expired">权益已失效</option></select><select class="sort" aria-label="排序"><option value="expiry">即将到期优先</option><option value="recent">最近领取优先</option></select></div>
     <div class="add-wrap" id="dd-rp-add" hidden><form class="add" novalidate><input class="link" type="url" aria-label="得到分享链接" aria-describedby="dd-rp-link-hint dd-rp-link-error" placeholder="粘贴得到红包分享链接" required><button class="secondary" type="submit">打开并收录 ↗</button></form><p id="dd-rp-link-hint" class="link-hint">支持得到短链接、分享页和文章链接；在新标签页核验并收录已领取的红包。</p><p id="dd-rp-link-error" class="link-error" role="alert" hidden></p></div>
-    <div class="status" role="status" aria-live="polite">点击刷新，从最近学习中查找课程红包。</div></div>
+    <div class="status" role="status" aria-live="polite">打开后自动读取已领取的课程红包。</div></div>
     <div class="summary"><span><b class="count">0</b>篇<span class="count-context">有效红包</span></span><button class="quiet reset-filters" hidden>重置筛选</button><span class="stamp">尚未刷新</span></div><div class="list" aria-label="知识红包列表"></div>
-    <div class="footer"><span title="最近学习不等于完整红包列表；遗漏的红包可添加分享链接。">未显示的红包，可添加链接。</span><button class="secondary more" hidden>继续查找更早记录</button><button class="quiet clear" aria-label="清除本账号缓存">清缓存</button><div class="clear-confirm" hidden><span>仅清除本机列表，得到账号中的内容会保留。</span><button class="confirm-clear">确认清除</button><button class="quiet cancel-clear">取消</button></div></div>
+    <div class="footer"><span title="来自官方已领取列表，不要求先学习。更多历史领取记录可继续加载。">已领取即可发现，无需先学习。</span><button class="secondary more" hidden>加载更早领取的红包</button><button class="quiet clear" aria-label="清除本账号缓存">清缓存</button><div class="clear-confirm" hidden><span>仅清除本机列表，得到账号中的内容会保留。</span><button class="confirm-clear">确认清除</button><button class="quiet cancel-clear">取消</button></div></div>
   </div></dialog>`;
   document.documentElement.append(host);
   const $ = selector => shadow.querySelector(selector);
@@ -59,7 +59,7 @@
   let visited = new Set();
   let syncedAt = 0;
   const autoAttempts = new Map();
-  const key = id => `redpacket:v1:${id}`;
+  const key = id => `redpacket:v2:${id}`;
   const formatTime = value => new Date(value).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   function status(message, error = false) { $('.status').textContent = message; $('.status').title = message; $('.status').classList.toggle('error', error); }
   function setBusy(value, allowCancel = false) {
@@ -101,7 +101,7 @@
     if (!rows.length) {
       const box = document.createElement('div'); box.className = 'empty';
       const title = document.createElement('strong'); title.textContent = items.length ? '这个筛选下还没有文章' : '等一篇值得读的好内容';
-      const text = document.createElement('div'); text.textContent = items.length ? '试试其他关键词、课程或状态。' : '刷新最近学习，或添加一个已领取的红包链接。';
+      const text = document.createElement('div'); text.textContent = items.length ? '试试其他关键词、课程或状态。' : '刷新已领取列表，或添加一个红包链接。';
       box.append(title, text);
       const action = document.createElement('button'); action.className = 'secondary';
       action.textContent = filtered ? '重置筛选' : '添加红包链接';
@@ -127,10 +127,16 @@
   async function loadAccount() {
     const ctx = await rpc('context');
     if (account !== ctx.account) { account = ctx.account; items = []; cursor = 0; hasMore = false; visited.clear(); updatedAt = 0; syncedAt = 0; }
-    const saved = (await chrome.storage.local.get(key(account)))[key(account)];
+    let saved = (await chrome.storage.local.get(key(account)))[key(account)];
+    if (!saved) {
+      const legacyKey = `redpacket:v1:${account}`;
+      const legacy = (await chrome.storage.local.get(legacyKey))[legacyKey];
+      if (Array.isArray(legacy?.items)) saved = { version: 1, items: legacy.items.filter(i => i.manual === true), syncedAt: 0 };
+    }
     if (saved?.version === 1 && Array.isArray(saved.items)) {
-      items = saved.items.slice(0, 500).map(i => C.cachedItem(i)).filter(Boolean);
+      items = saved.items.slice(0, 5000).map(i => C.cachedItem(i)).filter(Boolean);
       updatedAt = Number(saved.updatedAt) || 0;
+      cursor = Number(saved.cursor) || 0; hasMore = saved.hasMore === true;
       syncedAt = Number.isFinite(saved.syncedAt) ? saved.syncedAt : 0;
     } else { items = []; updatedAt = 0; syncedAt = 0; }
   }
@@ -144,7 +150,7 @@
     const previous = Array.isArray(latest?.items) ? latest.items.map(i => C.cachedItem(i)).filter(Boolean) : [];
     items = C.merge(previous, items).map(i => C.cachedItem(i)).filter(Boolean);
     syncedAt = Math.max(syncedAt, Number.isFinite(latest?.syncedAt) ? latest.syncedAt : 0);
-    await chrome.storage.local.set({ [key(expectedAccount)]: { version: 1, items, updatedAt, syncedAt } });
+    await chrome.storage.local.set({ [key(expectedAccount)]: { version: 1, items, updatedAt, syncedAt, cursor, hasMore } });
   }
   async function open({ autoRefresh = true } = {}) {
     if (opening) return;
@@ -175,13 +181,17 @@
       const ctx = await rpc('context');
       if (!account || ctx.account !== account) { await loadAccount(); more = false; }
       const expectedAccount = account;
+      const inbox = await rpc('inbox-context', { account });
       let seeds = more ? [] : items.map(i => ({ ...i })), examined = 0;
       if (!more) { cursor = 0; visited = new Set(); hasMore = false; }
       let pagingError = '';
       for (let n = 0; n < 5 && !cancelled; n++) {
-        status(`正在读取最近学习，第 ${n + 1} 页…`);
+        status(`正在读取已领取红包，第 ${n + 1} 页…`);
         try {
-          const page = await rpc('recent', { account, cursor });
+          const reply = await chrome.runtime.sendMessage({ type: 'received-list', uid: inbox.uid, cursor });
+          if (reply?.error || !reply?.result) throw Error(reply?.error || '红包列表读取失败');
+          if ((await rpc('context')).account !== expectedAccount) throw Error('账号已切换，请重新打开面板');
+          const page = reply.result;
           seeds = C.merge(seeds, page.items); examined += page.count;
           const next = C.nextCursor(page, cursor, visited);
           hasMore = next !== null;
@@ -203,7 +213,7 @@
       items = C.merge(items, results); updatedAt = Date.now();
       if (!more && !cancelled && !pagingError && !failures) syncedAt = updatedAt;
       await save(expectedAccount); draw();
-      status(`${cancelled ? '已停止。' : automatic ? '自动刷新完成。' : '刷新完成。'}读取 ${examined} 条学习记录，核验 ${verified} 篇；${items.filter(i => i.status === 'active').length} 篇红包有效。${failures ? ` ${failures} 篇待重试。` : ''}${hasMore ? ' 可继续查找更早记录。' : ''}${pagingError ? ` ${pagingError}` : ''}`, Boolean(pagingError || failures));
+      status(`${cancelled ? '已停止。' : automatic ? '自动刷新完成。' : '刷新完成。'}读取 ${examined} 条领取记录，核验 ${verified} 篇；${items.filter(i => i.status === 'active').length} 篇红包有效。${failures ? ` ${failures} 篇待重试。` : ''}${hasMore ? ' 可加载更早领取的红包。' : ''}${pagingError ? ` ${pagingError}` : ''}`, Boolean(pagingError || failures));
     } catch (e) { if (originalAccount !== account) draw(); status(e.message, true); }
     finally { setBusy(false); $('.refresh').textContent = '刷新红包'; draw(); }
   }
@@ -232,7 +242,7 @@
       const verified = await rpc('article', item);
       items = C.merge(items, [verified]); await save(expectedAccount); draw();
       if (verified.status !== 'active') throw Error('该红包权益已失效，列表已更新');
-      const url = `https://www.dedao.cn/course/article?id=${encodeURIComponent(item.enid)}`;
+      const url = `https://www.dedao.cn/course/article?id=${encodeURIComponent(verified.enid)}`;
       if (tab) tab.location.href = url; else location.href = url;
     } catch (e) { if (tab) tab.close(); status(e.message, true); }
     finally { setBusy(false); draw(); }
@@ -273,7 +283,7 @@
   $('.confirm-clear').addEventListener('click', async () => {
     if (busy || !account) return;
     setBusy(true);
-    try { await chrome.storage.local.remove(key(account)); items = []; updatedAt = 0; hasMore = false; cursor = 0; visited.clear(); syncedAt = 0; autoAttempts.delete(account); draw(); status('已清除本账号的本地列表。得到账号中的内容不受影响。'); }
+    try { await chrome.storage.local.remove([key(account), `redpacket:v1:${account}`]); items = []; updatedAt = 0; hasMore = false; cursor = 0; visited.clear(); syncedAt = 0; autoAttempts.delete(account); draw(); status('已清除本账号的本地列表。得到账号中的内容不受影响。'); }
     catch { status('清除缓存失败，请重试', true); }
     finally { $('.clear-confirm').hidden = true; setBusy(false); }
   });

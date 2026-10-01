@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "得到知识红包伴侣",
-  "version": "0.1.4",
-  "description": "整理最近学习中的知识红包，显示官方到期日，并在得到网页阅读。支持收录分享链接。",
+  "version": "0.2.0",
+  "description": "直接整理已领取的课程知识红包，无需先学习；显示官方到期日，并在得到网页阅读。",
   "permissions": [
     "storage"
   ],
@@ -44,5 +44,8 @@
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "homepage_url": "https://baiyalab.com/projects/dedao-redpacket-web-extension"
+  "homepage_url": "https://baiyalab.com/projects/dedao-redpacket-web-extension",
+  "host_permissions": [
+    "https://m.igetget.com/*"
+  ]
 }

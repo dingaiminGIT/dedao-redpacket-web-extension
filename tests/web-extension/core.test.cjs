@@ -62,3 +62,21 @@ test('auto refresh uses successful full scans with five-minute freshness and one
   assert.equal(C.shouldAutoRefresh(Infinity, NaN, now), true);
   assert.equal(C.shouldAutoRefresh(now + 10000, now + 10000, now), true);
 });
+
+test('received list includes never-studied course redpackets and preserves unresolved identity', () => {
+  const row = { authority_intro: { red_packet_rights: true }, product_title: '课程', collection_timestamp: 123,
+    article_item: { id: 3543, product_type: 65, product_title: '文章', enid: '', progress_intro: { progress: 0 } } };
+  const page = C.receivedPage({ list: [row], is_more: true });
+  assert.equal(page.items.length, 1); assert.equal(page.items[0].articleId, 3543);
+  assert.equal(page.timestamp, 123); assert.equal(page.has_more, true);
+  assert.equal(C.cachedItem(page.items[0]).status, 'unknown');
+  assert.equal(C.received({ ...row, authority_intro: { red_packet_rights: false } }), null);
+  assert.equal(C.received({ ...row, article_item: { ...row.article_item, product_type: 1013 } }), null);
+});
+test('resolving a received article and reloading its numeric seed never creates duplicates', () => {
+  const raw = { articleId: 3543, enid: '', title: '文章', status: 'unknown' };
+  const resolved = { ...raw, enid: 'abcdefgh12345678', status: 'active', checkedAt: 100 };
+  const list = C.merge(C.merge([raw], [resolved]), [raw]);
+  assert.equal(list.length, 1); assert.equal(list[0].enid, resolved.enid); assert.equal(list[0].status, 'active');
+  assert.equal(C.merge([{ enid: resolved.enid, manual: true }], [resolved]).length, 1);
+});

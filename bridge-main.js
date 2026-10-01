@@ -20,13 +20,25 @@
     if (Number(row.resource?.resource_type) !== 65) return null;
     return { enid: id, title: clean(row.resource?.title).replace(/^继续学习[：:]\s*/, ''), course: clean(row.title), seenAt: Number(row.timestamp) || 0 };
   }
+  const articleId = value => Number.isSafeInteger(Number(value)) && Number(value) > 0 ? Number(value) : 0;
+  const itemKey = item => articleId(item.articleId) ? `article:${item.articleId}` : enid(item.enid) ? item.enid : '';
+  function received(row) {
+    const a = row.article_item;
+    if (row.authority_intro?.red_packet_rights !== true || a?.product_type !== 65 || !articleId(a.id)) return null;
+    return { articleId: articleId(a.id), enid: enid(a.enid) ? a.enid : '', title: clean(a.product_title), course: clean(row.product_title), seenAt: Number(row.collection_timestamp) || 0, status: 'unknown' };
+  }
+  function receivedPage(data) {
+    if (!Array.isArray(data?.list) || typeof data.is_more !== 'boolean') throw Error('已领取红包列表格式已变化');
+    const stamps = data.list.map(row => Number(row.collection_timestamp));
+    return { items: data.list.map(received).filter(Boolean), count: data.list.length, has_more: data.is_more, timestamp: stamps.length && stamps.every(n => Number.isFinite(n) && n > 0) ? Math.min(...stamps) : 0 };
+  }
   function article(data, seed = {}, now = Date.now()) {
     if (!enid(seed.enid)) throw Error('文章标识无效');
     const rawExpiry = Date.parse(data.article_info?.red_packet_expire_time || '');
     const expireAt = Number.isFinite(rawExpiry) ? rawExpiry : 0;
     const active = data.is_red_packet_try === true && (!expireAt || expireAt > now);
     return {
-      enid: seed.enid, title: clean(data.article_title || seed.title || '未命名文章'),
+      articleId: articleId(data.article_id || seed.articleId), enid: seed.enid, title: clean(data.article_title || seed.title || '未命名文章'),
       course: clean(data.class_title || data.class_info?.name || seed.course || '未分类课程'),
       expiresOn: clean(data.red_packet_expire_day, 40), expireAt,
       status: active ? 'active' : 'expired', checkedAt: now,
@@ -34,21 +46,25 @@
     };
   }
   function merge(items, incoming) {
-    const result = new Map(items.filter(i => enid(i.enid)).map(i => [i.enid, i]));
-    for (const item of incoming) {
-      if (!enid(item.enid)) continue;
-      const old = result.get(item.enid);
+    const result = new Map();
+    for (const item of [...items, ...incoming]) {
+      const key = itemKey(item);
+      if (!key) continue;
+      const sameEnid = enid(item.enid) ? [...result.keys()].find(k => result.get(k).enid === item.enid) : null;
+      const old = result.get(key) || result.get(sameEnid);
+      if (sameEnid && sameEnid !== key) result.delete(sameEnid);
       const newest = old?.checkedAt > (item.checkedAt || 0) ? { ...item, ...old } : { ...old, ...item };
-      result.set(item.enid, { ...newest, manual: Boolean(old?.manual || item.manual) });
+      result.set(key, { ...newest, manual: Boolean(old?.manual || item.manual) });
     }
-    return [...result.values()].slice(-500);
+    return [...result.values()].slice(-5000);
   }
+
   function cachedItem(i, now = Date.now()) {
-    if (!i || !enid(i.enid)) return null;
+    if (!i || !itemKey(i)) return null;
     const number = value => Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : 0;
     const expireAt = number(i.expireAt);
     return {
-      enid: i.enid, title: clean(i.title), course: clean(i.course), expiresOn: clean(i.expiresOn, 40),
+      articleId: articleId(i.articleId), enid: enid(i.enid) ? i.enid : '', title: clean(i.title), course: clean(i.course), expiresOn: clean(i.expiresOn, 40),
       expireAt, checkedAt: number(i.checkedAt), seenAt: number(i.seenAt), manual: i.manual === true,
       status: i.status === 'expired' || (expireAt && expireAt <= now) ? 'expired' : i.status === 'active' ? 'active' : 'unknown'
     };
@@ -61,15 +77,15 @@
   function nextCursor(response, previous, visited) {
     if (!response.has_more) return null;
     const next = response.timestamp;
-    if ((typeof next !== 'number' && typeof next !== 'string') || !Number.isFinite(Number(next)) || Number(next) <= 0 || String(next) === String(previous) || visited.has(String(next))) throw Error('学习记录分页游标异常，已停止继续读取');
+    if ((typeof next !== 'number' && typeof next !== 'string') || !Number.isFinite(Number(next)) || Number(next) <= 0 || String(next) === String(previous) || visited.has(String(next))) throw Error('红包列表分页游标异常，已停止继续读取');
     return next;
   }
-  // Only successful full scans make the list fresh; collecting one article does not.
+  // Only successful refresh batches make the list fresh; collecting one article does not.
   function shouldAutoRefresh(syncedAt = 0, attemptedAt = 0, now = Date.now()) {
     const recent = (stamp, interval) => Number.isFinite(stamp) && stamp > 0 && stamp <= now && now - stamp < interval;
     return !recent(syncedAt, 300000) && !recent(attemptedAt, 60000);
   }
-  const api = { clean, enid, allowedLink, candidate, article, merge, cachedItem, filter, nextCursor, shouldAutoRefresh };
+  const api = { clean, enid, allowedLink, candidate, articleId, received, receivedPage, article, merge, cachedItem, filter, nextCursor, shouldAutoRefresh };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.DDRedpacketCore = Object.freeze(api);
 })(globalThis);
@@ -80,7 +96,6 @@
   if (window.__ddRedpacketBridge) return;
   window.__ddRedpacketBridge = true;
   const C = window.DDRedpacketCore;
-  const recentPath = '/api/pc/blade/v2/recent';
   const articlePath = '/pc/bauhinia/pc/article/info';
   async function request(path, data) {
     const csrf = document.cookie.split('; ').find(s => s.startsWith('csrfToken='))?.slice(10) || '';
@@ -99,20 +114,32 @@
     const user = await request('/api/pc/user/info');
     const state = window.__INITIAL_STATE__ || {};
     if (!user.uid_hazy || !state.uid) throw Error('请先登录得到网页版，再打开知识红包');
-    return { account: String(user.uid_hazy), uid: Number(state.uid) };
+    return { account: String(user.uid_hazy) };
   }
   async function execute(command, args) {
     if (command === 'context') return { account: (await context()).account };
-    if (command === 'recent') {
+    if (command === 'inbox-context') {
       const ctx = await context();
       if (ctx.account !== args.account) throw Error('账号已切换，请重新打开知识红包');
-      const data = await request(recentPath, { page_size: 20, max_id: args.cursor || 0, product_type: '', filter_product_type: true, uid: ctx.uid, uid_hazy: ctx.account });
-      if (!Array.isArray(data.list)) throw Error('学习记录格式已变化');
-      return { items: data.list.map(C.candidate).filter(Boolean), count: data.list.length, has_more: data.has_more, timestamp: data.timestamp };
+      const group = await request('/api/hades/v1/group/has', { category: 'bauhinia' });
+      if (!C.articleId(group.uid)) throw Error('无法取得当前账号标识，请重新登录得到网页');
+      if ((await context()).account !== ctx.account) throw Error('账号已切换，请重新打开知识红包');
+      return { account: ctx.account, uid: group.uid };
     }
     if (command === 'article') {
-      if (!C.enid(args.enid)) throw Error('文章链接无效');
-      const data = await request(articlePath, { detail_id: args.enid, with_perm_info: true });
+      let token = args.enid;
+      if (!C.enid(token)) {
+        if (!C.articleId(args.articleId) || !C.clean(args.title)) throw Error('文章标识无效');
+        const search = await request('/api/search/v2/pc/searchallarticle', { content: C.clean(args.title), hl_num: 0, page: 1, size: 20, type: 0, request_id: '' });
+        const matches = (search.list || []).filter(row => C.clean(row.title) === C.clean(args.title) && C.enid(row.extra?.token));
+        for (const match of matches.slice(0, 5)) {
+          const data = await request(articlePath, { detail_id: match.extra.token, with_perm_info: true });
+          if (Number(data.article_id) === Number(args.articleId)) return C.article(data, { ...args, enid: match.extra.token });
+        }
+        throw Error('暂未匹配到对应网页文章，已保留为待核验');
+      }
+      const data = await request(articlePath, { detail_id: token, with_perm_info: true });
+      if (C.articleId(args.articleId) && Number(data.article_id) !== Number(args.articleId)) throw Error('文章编号不匹配，已停止打开');
       return C.article(data, args);
     }
     if (command === 'current') {
