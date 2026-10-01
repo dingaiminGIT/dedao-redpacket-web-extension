@@ -31,7 +31,7 @@
     .primary{border:1px solid var(--orange);background:var(--orange);color:#fff;font-weight:500}.secondary{border:1px solid #f0d9cc;background:var(--soft-orange);color:#aa3d0e}.actions button,.add button,.empty button,.filter-toggle{padding:5px 10px;border-radius:7px;min-height:32px}
     .quiet{border:0;background:none;color:#a44217;padding:4px 2px;text-decoration:underline;text-underline-offset:3px}.stamp{font-size:11px;color:var(--muted)}
     .tools{padding:10px 14px 4px;flex-shrink:0;max-height:50%;overflow:auto}.search-row{display:flex;gap:6px}.search{flex:1}.filter-toggle{white-space:nowrap}.filter-toggle[aria-expanded="true"]{border-color:var(--orange)}
-    .filters{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.course-filter{grid-column:1/-1}.search,.filters select,.add input{min-width:0;width:100%;border:1px solid #dddfe3;border-radius:7px;background:#fff;padding:7px 9px;color:var(--ink)}input::placeholder{color:var(--muted)}
+    .filters{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.course-filter,.learning-filter{grid-column:1/-1}.search,.filters select,.add input{min-width:0;width:100%;border:1px solid #dddfe3;border-radius:7px;background:#fff;padding:7px 9px;color:var(--ink)}input::placeholder{color:var(--muted)}
     .add-wrap{margin-top:8px;padding:10px;background:var(--soft-orange);border-radius:8px}.add{display:flex;flex-wrap:wrap;gap:7px}.add input{flex-basis:100%}.add button{margin-left:auto}.link-hint,.link-error{font-size:11px;margin:6px 0 0}.link-hint{color:#825844}.link-error{color:#a33327}.link[aria-invalid="true"]{border-color:#a33327}
     .status{font-size:11px;color:#747079;margin-top:7px;min-height:17px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.status.error{color:#a33327}
     .summary{padding:3px 14px 8px;font-size:11px;color:var(--muted);flex-shrink:0;gap:5px;flex-wrap:wrap}.summary b{color:var(--ink);font-size:15px;margin-right:3px;font-variant-numeric:tabular-nums}.summary .reset-filters{font-size:11px}.list{flex:1;min-height:0;overflow:auto;padding:0 10px 6px;overscroll-behavior:contain}
@@ -47,7 +47,7 @@
   <dialog aria-modal="false" id="dd-rp-dialog" aria-labelledby="dd-rp-title"><div class="shell">
     <header><div class="top"><div><h1 id="dd-rp-title">知识红包</h1><p class="intro">已领取 · 课程红包</p></div><button class="close" aria-label="关闭知识红包">×</button></div>
     <div class="actions"><button class="primary refresh">刷新红包</button><button class="secondary toggle-add" aria-expanded="false" aria-controls="dd-rp-add">添加链接</button><button class="secondary collect" hidden>收录当前文章</button><button class="quiet cancel" hidden>停止</button></div></header>
-    <div class="tools"><div class="search-row"><input class="search" type="search" aria-label="搜索文章或课程" placeholder="搜索文章或课程" autofocus><button class="secondary filter-toggle" aria-expanded="false" aria-controls="dd-rp-filters">筛选</button></div><div class="filters" id="dd-rp-filters" hidden><select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select><select class="status-filter" aria-label="筛选状态"><option value="active">有效红包</option><option value="all">全部记录</option><option value="unknown">待核验</option><option value="expired">权益已失效</option></select><select class="sort" aria-label="排序"><option value="expiry">即将到期优先</option><option value="recent">最近领取优先</option></select></div>
+    <div class="tools"><div class="search-row"><input class="search" type="search" aria-label="搜索文章或课程" placeholder="搜索文章或课程" autofocus><button class="secondary filter-toggle" aria-expanded="false" aria-controls="dd-rp-filters">筛选</button></div><div class="filters" id="dd-rp-filters" hidden><select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select><select class="learning-filter" aria-label="筛选学习状态"><option value="all">全部学习状态</option><option value="incomplete">未学完（隐藏已学完）</option><option value="completed">已学完</option></select><select class="status-filter" aria-label="筛选状态"><option value="active">有效红包</option><option value="all">全部记录</option><option value="unknown">待核验</option><option value="expired">权益已失效</option></select><select class="sort" aria-label="排序"><option value="expiry">即将到期优先</option><option value="recent">最近领取优先</option></select></div>
     <div class="add-wrap" id="dd-rp-add" hidden><form class="add" novalidate><input class="link" type="url" aria-label="得到分享链接" aria-describedby="dd-rp-link-hint dd-rp-link-error" placeholder="粘贴得到红包分享链接" required><button class="secondary" type="submit">打开并收录 ↗</button></form><p id="dd-rp-link-hint" class="link-hint">支持得到短链接、分享页和文章链接；在新标签页核验并收录已领取的红包。</p><p id="dd-rp-link-error" class="link-error" role="alert" hidden></p></div>
     <div class="status" role="status" aria-live="polite">打开后自动读取已领取的课程红包。</div></div>
     <div class="summary"><span><b class="count">0</b>篇<span class="count-context">有效红包</span></span><button class="quiet reset-filters" hidden>重置筛选</button><span class="stamp">尚未刷新</span></div><div class="list" aria-label="知识红包列表"></div>
@@ -55,7 +55,7 @@
   </div></dialog>`;
   document.documentElement.append(host);
   const $ = selector => shadow.querySelector(selector);
-  let account = '', items = [], updatedAt = 0, cursor = 0, hasMore = false, busy = false, cancelled = false, opening = false;
+  let account = '', items = [], updatedAt = 0, cursor = 0, hasMore = false, busy = false, reading = false, cancelled = false, opening = false;
   let visited = new Set();
   let syncedAt = 0;
   const autoAttempts = new Map();
@@ -64,12 +64,12 @@
   function status(message, error = false) { $('.status').textContent = message; $('.status').title = message; $('.status').classList.toggle('error', error); }
   function setBusy(value, allowCancel = false) {
     busy = value;
-    for (const el of shadow.querySelectorAll('.refresh,.more,.collect,.add button,.clear,.confirm-clear,.read')) el.disabled = value;
+    for (const el of shadow.querySelectorAll('.refresh,.more,.collect,.add button,.clear,.confirm-clear')) el.disabled = value;
     $('.cancel').hidden = !value || !allowCancel;
     $('.list').setAttribute('aria-busy', String(value));
   }
   function resetFilters() {
-    $('.search').value = ''; $('.course-filter').value = ''; $('.status-filter').value = 'active'; $('.sort').value = 'expiry';
+    $('.search').value = ''; $('.course-filter').value = ''; $('.status-filter').value = 'active'; $('.sort').value = 'expiry'; $('.learning-filter').value = 'all'; persistLearningFilter();
     draw(); $('.search').focus();
   }
   function showFilters(show) {
@@ -85,28 +85,29 @@
     if (show) { showFilters(false); $('.link').focus(); }
   }
   function draw() {
-    const filtered = Boolean($('.search').value.trim() || $('.course-filter').value || $('.status-filter').value !== 'active');
+    const scrollTop = $('.list').scrollTop;
+    const filtered = Boolean($('.search').value.trim() || $('.course-filter').value || $('.status-filter').value !== 'active' || $('.learning-filter').value !== 'all');
     $('.reset-filters').hidden = !filtered;
-    $('.filter-toggle').textContent = ($('.course-filter').value || $('.status-filter').value !== 'active' || $('.sort').value !== 'expiry') ? '筛选 · 已选' : '筛选';
+    $('.filter-toggle').textContent = ($('.course-filter').value || $('.status-filter').value !== 'active' || $('.sort').value !== 'expiry' || $('.learning-filter').value !== 'all') ? '筛选 · 已选' : '筛选';
     $('.count-context').textContent = filtered ? '筛选结果' : '有效红包';
     $('.collect').hidden = !['/course/article', '/share/trialReading'].includes(location.pathname);
     const selected = $('.course-filter').value;
     $('.course-filter').replaceChildren(new Option('全部课程', ''));
     for (const name of [...new Set(items.map(i => i.course))].sort()) $('.course-filter').append(new Option(name, name));
     $('.course-filter').value = selected;
-    const rows = C.filter(items, { query: $('.search').value, course: $('.course-filter').value, status: $('.status-filter').value, sort: $('.sort').value });
+    const rows = C.filter(items, { query: $('.search').value, course: $('.course-filter').value, status: $('.status-filter').value, sort: $('.sort').value, learning: $('.learning-filter').value });
     $('.count').textContent = String(rows.length); $('.list').replaceChildren();
     $('.more').hidden = !hasMore;
     $('.stamp').textContent = updatedAt ? `上次核验 ${formatTime(updatedAt)}` : '尚未刷新';
     if (!rows.length) {
       const box = document.createElement('div'); box.className = 'empty';
-      const title = document.createElement('strong'); title.textContent = items.length ? '这个筛选下还没有文章' : '等一篇值得读的好内容';
-      const text = document.createElement('div'); text.textContent = items.length ? '试试其他关键词、课程或状态。' : '刷新已领取列表，或添加一个红包链接。';
+      const title = document.createElement('strong'); title.textContent = busy ? '正在加载红包…' : items.length ? '这个筛选下还没有文章' : '等一篇值得读的好内容';
+      const text = document.createElement('div'); text.textContent = busy ? '核验完成的文章会陆续显示，无需等全部结束。' : items.length ? '试试其他关键词、课程或状态。' : '刷新已领取列表，或添加一个红包链接。';
       box.append(title, text);
       const action = document.createElement('button'); action.className = 'secondary';
       action.textContent = filtered ? '重置筛选' : '添加红包链接';
       action.addEventListener('click', filtered ? resetFilters : () => showAdd(true));
-      box.append(action); $('.list').append(box);
+      if (!busy) box.append(action); $('.list').append(box);
     }
     for (const item of rows) {
       const card = document.createElement('article'); card.className = 'card';
@@ -118,16 +119,25 @@
         expiry.classList.add('urgent'); expiry.textContent += ' · 24小时内到期';
       }
       meta.append(expiry);
+      if (item.completed === true) { const learned = document.createElement('span'); learned.textContent = '已学完'; meta.append(learned); }
       if (item.manual) { const source = document.createElement('span'); source.textContent = '手动收录'; meta.append(source); }
       info.append(course, title, meta); card.append(info);
-      if (item.status === 'active') { const read = document.createElement('button'); read.className = 'read'; read.textContent = '阅读 ↗'; read.setAttribute('aria-label', `阅读《${item.title}》（新标签页）`); read.disabled = busy; read.addEventListener('click', () => readArticle(item)); card.append(read); }
+      if (item.status === 'active') { const read = document.createElement('button'); read.className = 'read'; read.textContent = '阅读 ↗'; read.setAttribute('aria-label', `阅读《${item.title}》（新标签页）`); read.disabled = reading; read.addEventListener('click', () => readArticle(item)); card.append(read); }
       $('.list').append(card);
     }
+    $('.list').scrollTop = scrollTop;
+  }
+  const preferenceKey = id => `redpacket:preferences:${id}`;
+  function persistLearningFilter() {
+    if (account) chrome.storage.local.set({ [preferenceKey(account)]: { learning: $('.learning-filter').value } }).catch(() => status('学习筛选设置保存失败，请重试', true));
   }
   async function loadAccount() {
     const ctx = await rpc('context');
     if (account !== ctx.account) { account = ctx.account; items = []; cursor = 0; hasMore = false; visited.clear(); updatedAt = 0; syncedAt = 0; }
-    let saved = (await chrome.storage.local.get(key(account)))[key(account)];
+    const stored = await chrome.storage.local.get([key(account), preferenceKey(account)]);
+    const learning = stored[preferenceKey(account)]?.learning;
+    $('.learning-filter').value = ['all', 'incomplete', 'completed'].includes(learning) ? learning : 'all';
+    let saved = stored[key(account)];
     if (!saved) {
       const legacyKey = `redpacket:v1:${account}`;
       const legacy = (await chrome.storage.local.get(legacyKey))[legacyKey];
@@ -173,8 +183,8 @@
     }
   }
   async function sync(more = false, automatic = false) {
-    if (busy) return;
-    setBusy(true, true); cancelled = false;
+    if (busy || reading) return;
+    setBusy(true, true); draw(); cancelled = false;
     $('.refresh').textContent = automatic ? '自动刷新中…' : '刷新中…';
     const originalAccount = account;
     try {
@@ -182,9 +192,22 @@
       if (!account || ctx.account !== account) { await loadAccount(); more = false; }
       const expectedAccount = account;
       const inbox = await rpc('inbox-context', { account });
-      let seeds = more ? [] : items.map(i => ({ ...i })), examined = 0;
+      let examined = 0, failures = 0, verified = 0, pagingError = '';
+      const checked = new Set();
+      const identity = item => item.articleId ? `article:${item.articleId}` : item.enid;
+      const verify = async batch => {
+        const fresh = batch.filter(seed => !checked.has(identity(seed)));
+        fresh.forEach(seed => checked.add(identity(seed)));
+        await C.runLimited(fresh, 4, async seed => {
+          let result;
+          try { result = await rpc('article', seed); }
+          catch { failures++; result = { ...seed, status: 'unknown', checkedAt: Date.now() }; }
+          items = C.merge(items, [result]); updatedAt = Date.now(); verified++;
+          draw();
+          status(`已核验 ${verified} 篇，${items.filter(i => i.status === 'active').length} 篇红包可阅读${cancelled ? '，正在停止…' : '，继续加载中…'}`);
+        }, () => cancelled);
+      };
       if (!more) { cursor = 0; visited = new Set(); hasMore = false; }
-      let pagingError = '';
       for (let n = 0; n < 5 && !cancelled; n++) {
         status(`正在读取已领取红包，第 ${n + 1} 页…`);
         try {
@@ -192,25 +215,19 @@
           if (reply?.error || !reply?.result) throw Error(reply?.error || '红包列表读取失败');
           if ((await rpc('context')).account !== expectedAccount) throw Error('账号已切换，请重新打开面板');
           const page = reply.result;
-          seeds = C.merge(seeds, page.items); examined += page.count;
+          examined += page.count;
+          // Preserve mapped IDs from cache and keep unresolved entries when cancelled.
+          items = C.merge(items, page.items);
+          const pageKeys = new Set(page.items.map(identity));
           const next = C.nextCursor(page, cursor, visited);
           hasMore = next !== null;
+          if (next !== null) { visited.add(String(next)); cursor = next; }
+          await verify(items.filter(item => pageKeys.has(identity(item))));
           if (next === null) break;
-          visited.add(String(next)); cursor = next;
         } catch (e) { pagingError = e.message; break; }
       }
-      let failures = 0, verified = 0;
-      const results = [];
-      for (const seed of seeds) {
-        if (cancelled) break;
-        status(`正在核验红包 ${verified + 1} / ${seeds.length}…`);
-        try { results.push(await rpc('article', seed)); }
-        catch { failures++; results.push({ ...seed, status: 'unknown', checkedAt: Date.now() }); }
-        verified++;
-      }
-      // Keep discovered but unchecked entries so stopping does not lose a page.
-      items = C.merge(items, seeds.map(s => ({ ...s, status: 'unknown' })));
-      items = C.merge(items, results); updatedAt = Date.now();
+      if (!more && !cancelled) await verify(items);
+      updatedAt = Date.now();
       if (!more && !cancelled && !pagingError && !failures) syncedAt = updatedAt;
       await save(expectedAccount); draw();
       status(`${cancelled ? '已停止。' : automatic ? '自动刷新完成。' : '刷新完成。'}读取 ${examined} 条领取记录，核验 ${verified} 篇；${items.filter(i => i.status === 'active').length} 篇红包有效。${failures ? ` ${failures} 篇待重试。` : ''}${hasMore ? ' 可加载更早领取的红包。' : ''}${pagingError ? ` ${pagingError}` : ''}`, Boolean(pagingError || failures));
@@ -232,11 +249,14 @@
     finally { setBusy(false); draw(); }
   }
   async function readArticle(item) {
-    if (busy) return;
+    if (reading) return;
+    const syncing = busy;
+    reading = true;
     // Open during the click to avoid popup blockers, and close if rights fail.
     const tab = window.open('about:blank', '_blank');
     if (tab) tab.opener = null;
-    setBusy(true);
+    if (!syncing) setBusy(true);
+    draw();
     try {
       const expectedAccount = account;
       const verified = await rpc('article', item);
@@ -245,7 +265,7 @@
       const url = `https://www.dedao.cn/course/article?id=${encodeURIComponent(verified.enid)}`;
       if (tab) tab.location.href = url; else location.href = url;
     } catch (e) { if (tab) tab.close(); status(e.message, true); }
-    finally { setBusy(false); draw(); }
+    finally { reading = false; if (!syncing) setBusy(false); draw(); }
   }
   $('.launch').addEventListener('click', () => $('dialog').open ? closePanel() : open());
   $('.close').addEventListener('click', () => closePanel());
@@ -262,6 +282,7 @@
   $('.toggle-add').addEventListener('click', () => showAdd($('.add-wrap').hidden));
   $('.reset-filters').addEventListener('click', resetFilters);
   $('.link').addEventListener('input', () => { $('.link-error').hidden = true; $('.link').removeAttribute('aria-invalid'); });
+  $('.learning-filter').addEventListener('input', () => { persistLearningFilter(); draw(); });
   for (const selector of ['.search', '.course-filter', '.status-filter', '.sort']) $(selector).addEventListener('input', draw);
   $('.add').addEventListener('submit', async e => {
     e.preventDefault(); if (busy) return;

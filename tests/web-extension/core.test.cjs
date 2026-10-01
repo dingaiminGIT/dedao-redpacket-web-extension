@@ -80,3 +80,49 @@ test('resolving a received article and reloading its numeric seed never creates 
   assert.equal(list.length, 1); assert.equal(list[0].enid, resolved.enid); assert.equal(list[0].status, 'active');
   assert.equal(C.merge([{ enid: resolved.enid, manual: true }], [resolved]).length, 1);
 });
+
+test('bounded verification renders fast completions before a slow first request', async () => {
+  const release = new Map(), completed = []; let active = 0, peak = 0;
+  const running = C.runLimited([0, 1, 2, 3], 2, async id => {
+    active++; peak = Math.max(peak, active);
+    await new Promise(resolve => release.set(id, resolve));
+    active--; completed.push(id);
+  });
+  assert.equal(active, 2);
+  release.get(1)(); await new Promise(setImmediate);
+  assert.deepEqual(completed, [1]); assert.equal(active, 2);
+  release.get(2)(); await new Promise(setImmediate);
+  release.get(3)(); release.get(0)(); await running;
+  assert.equal(peak, 2); assert.equal(completed.length, 4);
+});
+test('stopping verification finishes in-flight work without launching the rest', async () => {
+  let stop = false; const started = [], release = [];
+  const running = C.runLimited([0, 1, 2, 3], 2, async id => {
+    started.push(id); await new Promise(resolve => release.push(resolve));
+  }, () => stop);
+  stop = true; release.forEach(done => done()); await running;
+  assert.deepEqual(started, [0, 1]);
+});
+test('completion follows App finished/progress fields and persists through article verification', () => {
+  const row = { authority_intro: { red_packet_rights: true }, article_item: { id: 123, product_type: 65, product_title: '文章', is_finished: 0, progress_intro: { progress: 0 } } };
+  assert.equal(C.received(row).completed, false);
+  assert.equal(C.received({ ...row, is_finished: 1 }).completed, true);
+  assert.equal(C.received({ ...row, article_item: { ...row.article_item, is_finished: 1 } }).completed, true);
+  const seed = C.received({ ...row, article_item: { ...row.article_item, progress_intro: { progress: 100 } } });
+  const item = C.article({ is_red_packet_try: true, article_info: { audio: { listen_finished: false } } }, { ...seed, enid: id });
+  assert.equal(C.cachedItem(item).completed, true);
+  assert.equal(C.article({ article_info: { is_read: true } }, { enid: id }).completed, null);
+  assert.equal(C.article({ article_info: { audio: { listen_finished: true } } }, { enid: id }).completed, true);
+});
+test('learning filters combine with rights filters and do not label unknown progress incomplete', () => {
+  const items = [{ title: 'done', course: 'A', status: 'active', completed: true }, { title: 'todo', course: 'A', status: 'active', completed: false }, { title: 'unknown', course: 'A', status: 'active', completed: null }, { title: 'expired', course: 'A', status: 'expired', completed: true }];
+  assert.deepEqual(C.filter(items, { learning: 'completed' }).map(i => i.title), ['done']);
+  assert.deepEqual(C.filter(items, { learning: 'incomplete' }).map(i => i.title), ['todo']);
+  assert.equal(C.filter(items, { learning: 'all', status: 'all' }).length, 4);
+});
+test('fresh list progress replaces stale progress without discarding a verified web ID', () => {
+  const old = { articleId: 123, enid: id, checkedAt: 500, completed: false, learningCheckedAt: 100 };
+  const incoming = { articleId: 123, enid: '', completed: true, learningCheckedAt: 600 };
+  const result = C.merge([old], [incoming])[0];
+  assert.equal(result.completed, true); assert.equal(result.enid, id);
+});
