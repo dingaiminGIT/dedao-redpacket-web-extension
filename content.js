@@ -28,11 +28,10 @@
     .shell{height:100%;display:flex;flex-direction:column}header{padding:12px 14px 10px;border-bottom:1px solid var(--line);background:#fff;flex-shrink:0}
     .top,.actions,.summary,.footer,.meta{display:flex;align-items:center;gap:8px}.top,.summary,.footer{justify-content:space-between}h1{margin:0;font-size:18px;font-weight:650}.intro{color:var(--muted);font-size:11px;margin:1px 0 0}
     .close{border:0;border-radius:6px;width:30px;height:30px;background:var(--soft-orange);color:#a44217;font-size:22px;line-height:1;flex-shrink:0}.actions{flex-wrap:wrap;margin-top:9px;gap:6px}
-    .primary{border:1px solid var(--orange);background:var(--orange);color:#fff;font-weight:500}.secondary{border:1px solid #f0d9cc;background:var(--soft-orange);color:#aa3d0e}.actions button,.add button,.empty button,.filter-toggle{padding:5px 10px;border-radius:7px;min-height:32px}
+    .primary{border:1px solid var(--orange);background:var(--orange);color:#fff;font-weight:500}.secondary{border:1px solid #f0d9cc;background:var(--soft-orange);color:#aa3d0e}.actions button,.empty button,.filter-toggle{padding:5px 10px;border-radius:7px;min-height:32px}
     .quiet{border:0;background:none;color:#a44217;padding:4px 2px;text-decoration:underline;text-underline-offset:3px}.stamp{font-size:11px;color:var(--muted)}
     .tools{padding:10px 14px 4px;flex-shrink:0;max-height:50%;overflow:auto}.search-row{display:flex;gap:6px}.search{flex:1}.filter-toggle{white-space:nowrap}.filter-toggle[aria-expanded="true"]{border-color:var(--orange)}
-    .filters{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.course-filter,.learning-filter{grid-column:1/-1}.search,.filters select,.add input{min-width:0;width:100%;border:1px solid #dddfe3;border-radius:7px;background:#fff;padding:7px 9px;color:var(--ink)}input::placeholder{color:var(--muted)}
-    .add-wrap{margin-top:8px;padding:10px;background:var(--soft-orange);border-radius:8px}.add{display:flex;flex-wrap:wrap;gap:7px}.add input{flex-basis:100%}.add button{margin-left:auto}.link-hint,.link-error{font-size:11px;margin:6px 0 0}.link-hint{color:#825844}.link-error{color:#a33327}.link[aria-invalid="true"]{border-color:#a33327}
+    .filters{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.course-filter,.learning-filter{grid-column:1/-1}.search,.filters select{min-width:0;width:100%;border:1px solid #dddfe3;border-radius:7px;background:#fff;padding:7px 9px;color:var(--ink)}input::placeholder{color:var(--muted)}
     .status{font-size:11px;color:#747079;margin-top:7px;min-height:17px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.status.error{color:#a33327}
     .summary{padding:3px 14px 8px;font-size:11px;color:var(--muted);flex-shrink:0;gap:5px;flex-wrap:wrap}.summary b{color:var(--ink);font-size:15px;margin-right:3px;font-variant-numeric:tabular-nums}.summary .reset-filters{font-size:11px}.list{flex:1;min-height:0;overflow:auto;padding:0 10px 6px;overscroll-behavior:contain}
     .card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:10px;margin-bottom:6px}.course{font-size:11px;color:var(--muted);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-size:14px;font-weight:550;line-height:1.5;margin:0;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -46,9 +45,8 @@
   <button class="launch" aria-haspopup="dialog" aria-controls="dd-rp-dialog" aria-expanded="false">知识红包</button>
   <dialog aria-modal="false" id="dd-rp-dialog" aria-labelledby="dd-rp-title"><div class="shell">
     <header><div class="top"><div><h1 id="dd-rp-title">知识红包</h1><p class="intro">已领取 · 课程红包</p></div><button class="close" aria-label="关闭知识红包">×</button></div>
-    <div class="actions"><button class="primary refresh">刷新红包</button><button class="secondary toggle-add" aria-expanded="false" aria-controls="dd-rp-add">添加链接</button><button class="secondary collect" hidden>收录当前文章</button><button class="quiet cancel" hidden>停止</button></div></header>
+    <div class="actions"><button class="primary refresh">刷新红包</button><button class="quiet cancel" hidden>停止</button></div></header>
     <div class="tools"><div class="search-row"><input class="search" type="search" aria-label="搜索文章或课程" placeholder="搜索文章或课程" autofocus><button class="secondary filter-toggle" aria-expanded="false" aria-controls="dd-rp-filters">筛选</button></div><div class="filters" id="dd-rp-filters" hidden><select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select><select class="learning-filter" aria-label="筛选学习状态"><option value="all">全部学习状态</option><option value="incomplete">未学完（隐藏已学完）</option><option value="completed">已学完</option></select><select class="status-filter" aria-label="筛选状态"><option value="active">有效红包</option><option value="all">全部记录</option><option value="unknown">待核验</option><option value="expired">权益已失效</option></select><select class="sort" aria-label="排序"><option value="expiry">即将到期优先</option><option value="recent">最近领取优先</option></select></div>
-    <div class="add-wrap" id="dd-rp-add" hidden><form class="add" novalidate><input class="link" type="url" aria-label="得到分享链接" aria-describedby="dd-rp-link-hint dd-rp-link-error" placeholder="粘贴得到红包分享链接" required><button class="secondary" type="submit">打开并收录 ↗</button></form><p id="dd-rp-link-hint" class="link-hint">支持得到短链接、分享页和文章链接；在新标签页核验并收录已领取的红包。</p><p id="dd-rp-link-error" class="link-error" role="alert" hidden></p></div>
     <div class="status" role="status" aria-live="polite">打开后自动读取已领取的课程红包。</div></div>
     <div class="summary"><span><b class="count">0</b>篇<span class="count-context">有效红包</span></span><button class="quiet reset-filters" hidden>重置筛选</button><span class="stamp">尚未刷新</span></div><div class="list" aria-label="知识红包列表"></div>
     <div class="footer"><span title="来自官方已领取列表，不要求先学习。更多历史领取记录可继续加载。">已领取即可发现，无需先学习。</span><button class="secondary more" hidden>加载更早领取的红包</button><button class="quiet clear" aria-label="清除本账号缓存">清缓存</button><div class="clear-confirm" hidden><span>仅清除本机列表，得到账号中的内容会保留。</span><button class="confirm-clear">确认清除</button><button class="quiet cancel-clear">取消</button></div></div>
@@ -64,7 +62,7 @@
   function status(message, error = false) { $('.status').textContent = message; $('.status').title = message; $('.status').classList.toggle('error', error); }
   function setBusy(value, allowCancel = false) {
     busy = value;
-    for (const el of shadow.querySelectorAll('.refresh,.more,.collect,.add button,.clear,.confirm-clear')) el.disabled = value;
+    for (const el of shadow.querySelectorAll('.refresh,.more,.clear,.confirm-clear')) el.disabled = value;
     $('.cancel').hidden = !value || !allowCancel;
     $('.list').setAttribute('aria-busy', String(value));
   }
@@ -74,15 +72,11 @@
   }
   function showFilters(show) {
     $('.filters').hidden = !show; $('.filter-toggle').setAttribute('aria-expanded', String(show));
-    if (show) { showAdd(false); $('.course-filter').focus(); }
+    if (show) $('.course-filter').focus();
   }
   function closePanel(restoreFocus = true) {
     $('dialog').close(); $('.launch').setAttribute('aria-expanded', 'false');
     if (restoreFocus) $('.launch').focus();
-  }
-  function showAdd(show) {
-    $('.add-wrap').hidden = !show; $('.toggle-add').setAttribute('aria-expanded', String(show));
-    if (show) { showFilters(false); $('.link').focus(); }
   }
   function draw() {
     const scrollTop = $('.list').scrollTop;
@@ -90,7 +84,6 @@
     $('.reset-filters').hidden = !filtered;
     $('.filter-toggle').textContent = ($('.course-filter').value || $('.status-filter').value !== 'active' || $('.sort').value !== 'expiry' || $('.learning-filter').value !== 'all') ? '筛选 · 已选' : '筛选';
     $('.count-context').textContent = filtered ? '筛选结果' : '有效红包';
-    $('.collect').hidden = !['/course/article', '/share/trialReading'].includes(location.pathname);
     const selected = $('.course-filter').value;
     $('.course-filter').replaceChildren(new Option('全部课程', ''));
     for (const name of [...new Set(items.map(i => i.course))].sort()) $('.course-filter').append(new Option(name, name));
@@ -102,11 +95,11 @@
     if (!rows.length) {
       const box = document.createElement('div'); box.className = 'empty';
       const title = document.createElement('strong'); title.textContent = busy ? '正在加载红包…' : items.length ? '这个筛选下还没有文章' : '等一篇值得读的好内容';
-      const text = document.createElement('div'); text.textContent = busy ? '核验完成的文章会陆续显示，无需等全部结束。' : items.length ? '试试其他关键词、课程或状态。' : '刷新已领取列表，或添加一个红包链接。';
+      const text = document.createElement('div'); text.textContent = busy ? '核验完成的文章会陆续显示，无需等全部结束。' : items.length ? '试试其他关键词、课程或状态。' : '请刷新已领取列表；历史红包可继续加载。';
       box.append(title, text);
       const action = document.createElement('button'); action.className = 'secondary';
-      action.textContent = filtered ? '重置筛选' : '添加红包链接';
-      action.addEventListener('click', filtered ? resetFilters : () => showAdd(true));
+      action.textContent = filtered ? '重置筛选' : '刷新红包';
+      action.addEventListener('click', filtered ? resetFilters : () => sync());
       if (!busy) box.append(action); $('.list').append(box);
     }
     for (const item of rows) {
@@ -120,7 +113,6 @@
       }
       meta.append(expiry);
       if (item.completed === true) { const learned = document.createElement('span'); learned.textContent = '已学完'; meta.append(learned); }
-      if (item.manual) { const source = document.createElement('span'); source.textContent = '手动收录'; meta.append(source); }
       info.append(course, title, meta); card.append(info);
       if (item.status === 'active') { const read = document.createElement('button'); read.className = 'read'; read.textContent = '阅读 ↗'; read.setAttribute('aria-label', `阅读《${item.title}》（新标签页）`); read.disabled = reading; read.addEventListener('click', () => readArticle(item)); card.append(read); }
       $('.list').append(card);
@@ -155,14 +147,14 @@
       account = ''; items = []; updatedAt = 0; hasMore = false; cursor = 0;
       throw Error('检测到账号切换，已清空当前显示，请重新打开面板');
     }
-    // Retain articles collected in another tab while this panel was open.
+    // Retain articles updated in another tab while this panel was open.
     const latest = (await chrome.storage.local.get(key(expectedAccount)))[key(expectedAccount)];
     const previous = Array.isArray(latest?.items) ? latest.items.map(i => C.cachedItem(i)).filter(Boolean) : [];
     items = C.merge(previous, items).map(i => C.cachedItem(i)).filter(Boolean);
     syncedAt = Math.max(syncedAt, Number.isFinite(latest?.syncedAt) ? latest.syncedAt : 0);
     await chrome.storage.local.set({ [key(expectedAccount)]: { version: 1, items, updatedAt, syncedAt, cursor, hasMore } });
   }
-  async function open({ autoRefresh = true } = {}) {
+  async function open() {
     if (opening) return;
     $('.clear-confirm').hidden = true;
     if (! $('dialog').open) $('dialog').show();
@@ -173,7 +165,7 @@
     try { await loadAccount(); loaded = true; draw(); status(items.length ? '已载入缓存，最近更新仍有效。' : '已连接当前得到账号。'); }
     catch (e) { account = ''; items = []; updatedAt = 0; hasMore = false; draw(); status(e.message, true); }
     finally { opening = false; setBusy(false); }
-    if (loaded && autoRefresh && $('dialog').open) {
+    if (loaded && $('dialog').open) {
       if (C.shouldAutoRefresh(syncedAt, autoAttempts.get(account))) {
         autoAttempts.set(account, Date.now());
         await sync(false, true);
@@ -234,20 +226,6 @@
     } catch (e) { if (originalAccount !== account) draw(); status(e.message, true); }
     finally { setBusy(false); $('.refresh').textContent = '刷新红包'; draw(); }
   }
-  async function collect() {
-    if (busy) return;
-    setBusy(true);
-    try {
-      if (!account) await loadAccount();
-      const expectedAccount = account;
-      const current = await rpc('current');
-      const item = await rpc('article', { ...current, manual: true });
-      if (item.status !== 'active') throw Error('这篇文章当前没有有效红包权益，未收录');
-      items = C.merge(items, [item]); updatedAt = Date.now(); await save(expectedAccount); draw();
-      status(`已收录「${item.title}」${item.expiresOn ? `，有效至 ${item.expiresOn}` : ''}。`);
-    } catch (e) { status(e.message, true); }
-    finally { setBusy(false); draw(); }
-  }
   async function readArticle(item) {
     if (reading) return;
     const syncing = busy;
@@ -278,27 +256,9 @@
   });
   $('.refresh').addEventListener('click', () => sync()); $('.more').addEventListener('click', () => sync(true));
   $('.cancel').addEventListener('click', () => { cancelled = true; status('正在停止，将保留已完成的核验结果…'); });
-  $('.collect').addEventListener('click', collect);
-  $('.toggle-add').addEventListener('click', () => showAdd($('.add-wrap').hidden));
   $('.reset-filters').addEventListener('click', resetFilters);
-  $('.link').addEventListener('input', () => { $('.link-error').hidden = true; $('.link').removeAttribute('aria-invalid'); });
   $('.learning-filter').addEventListener('input', () => { persistLearningFilter(); draw(); });
   for (const selector of ['.search', '.course-filter', '.status-filter', '.sort']) $(selector).addEventListener('input', draw);
-  $('.add').addEventListener('submit', async e => {
-    e.preventDefault(); if (busy) return;
-    const url = C.allowedLink($('.link').value);
-    if (!url) {
-      $('.link-error').textContent = '请粘贴 https://d.dedao.cn/ 短链接，或得到官方文章、分享页链接。';
-      $('.link-error').hidden = false; $('.link').setAttribute('aria-invalid', 'true'); $('.link').focus(); return;
-    }
-    setBusy(true); $('.add button').textContent = '正在打开…';
-    try {
-      const reply = await chrome.runtime.sendMessage({ type: 'import-link', url });
-      if (!reply?.ok) throw Error(reply?.error || '打开链接失败，请重试');
-      status('已在新标签页打开链接，正在核验并收录红包。'); $('.link').value = ''; showAdd(false);
-    } catch (error) { $('.link-error').textContent = error.message || '无法打开链接'; $('.link-error').hidden = false; }
-    finally { setBusy(false); $('.add button').textContent = '打开并收录 ↗'; }
-  });
   $('.clear').addEventListener('click', () => { $('.clear-confirm').hidden = false; $('.cancel-clear').focus(); });
   $('.cancel-clear').addEventListener('click', () => { $('.clear-confirm').hidden = true; $('.clear').focus(); });
   $('.confirm-clear').addEventListener('click', async () => {
@@ -312,8 +272,5 @@
     if (area === 'local' && account && changes[key(account)] && !busy && $('dialog').open) status('其他页面已更新红包列表，重新打开面板即可载入。');
   });
   draw();
-  chrome.runtime.sendMessage({ type: 'consume-import' }).then(async response => {
-    if (response?.pending) { await open({ autoRefresh: false }); await collect(); }
-    else if (location.hash === '#dd-redpacket') await open();
-  }).catch(() => { if (location.hash === '#dd-redpacket') open(); });
+  if (location.hash === '#dd-redpacket') open();
 })();

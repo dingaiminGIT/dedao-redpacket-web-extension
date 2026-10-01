@@ -49,13 +49,6 @@
       if (C.articleId(args.articleId) && Number(data.article_id) !== Number(args.articleId)) throw Error('文章编号不匹配，已停止打开');
       return C.article(data, args);
     }
-    if (command === 'current') {
-      const u = new URL(location.href);
-      if (u.pathname === '/course/article' && C.enid(u.searchParams.get('id'))) return { enid: u.searchParams.get('id') };
-      const packet = window.__INITIAL_STATE__?.packetInfo;
-      if (u.pathname === '/share/trialReading' && packet?.has_authority === true && C.enid(packet.enid)) return { enid: packet.enid };
-      throw Error('当前不是已有阅读权限的课程文章，请先登录并打开已领取的红包分享页');
-    }
     throw Error('不支持的操作');
   }
   // Fixed read-only commands; neither session secrets nor raw API responses cross worlds.

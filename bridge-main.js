@@ -3,23 +3,6 @@
   'use strict';
   const clean = (value, max = 300) => String(value ?? '').replace(/<[^>]*>/g, '').replace(/\u0000/g, '').trim().slice(0, max);
   const enid = value => typeof value === 'string' && /^[A-Za-z0-9]{8,100}$/.test(value);
-  function allowedLink(text) {
-    try {
-      const u = new URL(text.trim());
-      if (u.protocol !== 'https:' || u.username || u.password || u.port) return null;
-      if (u.hostname === 'd.dedao.cn' && /^\/[A-Za-z0-9]{4,100}$/.test(u.pathname)) return u.href;
-      if (u.hostname !== 'www.dedao.cn') return null;
-      if (u.pathname === '/course/article' && enid(u.searchParams.get('id'))) return u.href;
-      if (u.pathname === '/share/trialReading' && /^[A-Za-z0-9]{8,200}$/.test(u.searchParams.get('trialReadingId') || '')) return u.href;
-    } catch {}
-    return null;
-  }
-  function candidate(row) {
-    const id = row.ext?.ariticle_id_hazy;
-    if (!enid(id) || row.authority_intro?.is_red_packet_try !== true || row.authority_intro?.has_authority !== true) return null;
-    if (Number(row.resource?.resource_type) !== 65) return null;
-    return { enid: id, title: clean(row.resource?.title).replace(/^继续学习[：:]\s*/, ''), course: clean(row.title), seenAt: Number(row.timestamp) || 0 };
-  }
   const articleId = value => Number.isSafeInteger(Number(value)) && Number(value) > 0 ? Number(value) : 0;
   const itemKey = item => articleId(item.articleId) ? `article:${item.articleId}` : enid(item.enid) ? item.enid : '';
   function received(row) {
@@ -94,12 +77,12 @@
     };
     await Promise.all(Array.from({ length: Math.min(Math.max(1, limit), list.length) }, worker));
   }
-  // Only successful refresh batches make the list fresh; collecting one article does not.
+  // Only successful refresh batches make the list fresh.
   function shouldAutoRefresh(syncedAt = 0, attemptedAt = 0, now = Date.now()) {
     const recent = (stamp, interval) => Number.isFinite(stamp) && stamp > 0 && stamp <= now && now - stamp < interval;
     return !recent(syncedAt, 300000) && !recent(attemptedAt, 60000);
   }
-  const api = { clean, enid, allowedLink, candidate, articleId, received, receivedPage, article, merge, cachedItem, filter, nextCursor, runLimited, shouldAutoRefresh };
+  const api = { clean, enid, articleId, received, receivedPage, article, merge, cachedItem, filter, nextCursor, runLimited, shouldAutoRefresh };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.DDRedpacketCore = Object.freeze(api);
 })(globalThis);
@@ -155,13 +138,6 @@
       const data = await request(articlePath, { detail_id: token, with_perm_info: true });
       if (C.articleId(args.articleId) && Number(data.article_id) !== Number(args.articleId)) throw Error('文章编号不匹配，已停止打开');
       return C.article(data, args);
-    }
-    if (command === 'current') {
-      const u = new URL(location.href);
-      if (u.pathname === '/course/article' && C.enid(u.searchParams.get('id'))) return { enid: u.searchParams.get('id') };
-      const packet = window.__INITIAL_STATE__?.packetInfo;
-      if (u.pathname === '/share/trialReading' && packet?.has_authority === true && C.enid(packet.enid)) return { enid: packet.enid };
-      throw Error('当前不是已有阅读权限的课程文章，请先登录并打开已领取的红包分享页');
     }
     throw Error('不支持的操作');
   }

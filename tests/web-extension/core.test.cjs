@@ -2,19 +2,6 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const C = require('../../core.js');
 const id = 'ExampleArticle12345678';
-test('only supported official HTTPS links can be imported', () => {
-  assert.ok(C.allowedLink('https://d.dedao.cn/ExamplePacket1234'));
-  assert.ok(C.allowedLink(`https://www.dedao.cn/course/article?id=${id}`));
-  assert.ok(C.allowedLink('https://www.dedao.cn/share/trialReading?trialReadingId=abcdefgh12345678&type=65'));
-  for (const url of ['javascript:alert(1)', 'http://www.dedao.cn/course/article?id=abcdefgh', 'https://www.dedao.cn.evil.test/course/article?id=abcdefgh', 'https://evil@www.dedao.cn/course/article?id=abcdefgh', 'https://www.dedao.cn:444/course/article?id=abcdefgh', 'https://www.dedao.cn/logout', 'https://d.dedao.cn/../logout/now']) assert.equal(C.allowedLink(url), null, url);
-});
-test('recent candidates require both explicit redpacket rights and course article identity', () => {
-  const row = { ext: { ariticle_id_hazy: id }, authority_intro: { is_red_packet_try: true, has_authority: true }, resource: { resource_type: 65, title: '<hl>继续学习：</hl>安全标题' }, title: '课程' };
-  assert.equal(C.candidate(row).title, '安全标题');
-  assert.equal(C.candidate({ ...row, authority_intro: { has_authority: true } }), null);
-  assert.equal(C.candidate({ ...row, resource: { resource_type: 13 } }), null);
-  assert.equal(C.candidate({ ...row, ext: { ariticle_id_hazy: '../bad' } }), null);
-});
 test('purchased or trial-only content never masquerades as an active redpacket', () => {
   for (const raw of [{ is_buy: 1 }, { is_user_free_try: true }, { is_red_packet_try: false }]) assert.equal(C.article(raw, { enid: id }).status, 'expired');
 });
@@ -31,7 +18,7 @@ test('pagination stops at end and rejects repeated or malformed cursors', () => 
   for (const stamp of [0, -1, Infinity, undefined, {}, 123, '123']) assert.throws(() => C.nextCursor({ has_more: true, timestamp: stamp }, 123, new Set()));
   assert.throws(() => C.nextCursor({ has_more: true, timestamp: 123 }, 456, new Set(['123'])));
 });
-test('manual imports use class_info.name when the API returns an empty class_title', () => {
+test('article metadata uses class_info.name when the API returns an empty class_title', () => {
   assert.equal(C.article({ is_red_packet_try: true, class_title: '', class_info: { name: '商业参考' } }, { enid: id }).course, '商业参考');
 });
 test('merging deduplicates articles and preserves manual provenance', () => {

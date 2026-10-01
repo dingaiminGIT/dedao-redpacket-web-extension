@@ -22,29 +22,10 @@ function fixture({ response, httpStatus = 200 } = {}) {
   const sender = { url: 'https://www.dedao.cn/', tab: { id: 7 } };
   return { state, calls, send: message => new Promise(resolve => receive(message, sender, resolve)), receive, action, removed };
 }
-test('import marks tab before navigation, and import intent is consumed once', async () => {
-  const f = fixture();
-  const reply = await f.send({ type: 'import-link', url: 'https://d.dedao.cn/ExamplePacket1234' });
-  assert.equal(reply.ok, true);
-  assert.equal(f.calls[0][1].url, 'about:blank');
-  assert.equal(f.calls[1][3], true);
-  assert.equal((await f.send({ type: 'consume-import' })).pending, true);
-  assert.equal((await f.send({ type: 'consume-import' })).pending, false);
-});
-test('invalid URL opens nothing; stale intents and closed tabs are cleared', async () => {
-  const f = fixture();
-  assert.ok((await f.send({ type: 'import-link', url: 'https://evil.test/' })).error);
-  assert.equal(f.calls.length, 0);
-  f.state['import:7'] = Date.now() - 130000;
-  assert.equal((await f.send({ type: 'consume-import' })).pending, false);
-  assert.equal(f.state['import:7'], undefined);
-  f.state['import:7'] = Date.now(); await f.removed(7);
-  assert.equal(f.state['import:7'], undefined);
-});
 test('messages from another origin or without a tab are ignored', () => {
   const f = fixture();
   for (const sender of [{ url: 'https://evil.test/', tab: { id: 7 } }, { url: 'https://www.dedao.cn/' }]) {
-    assert.equal(f.receive({ type: 'import-link', url: 'https://d.dedao.cn/ExamplePacket1234' }, sender, () => assert.fail('must not respond')), undefined);
+    assert.equal(f.receive({ type: 'received-list', uid: 321 }, sender, () => assert.fail('must not respond')), undefined);
   }
   assert.equal(f.calls.length, 0);
 });
@@ -64,4 +45,12 @@ test('invalid list context and API failures never become a successful empty list
   const f = fixture(); assert.ok((await f.send({ type: 'received-list', uid: '../bad' })).error); assert.equal(f.calls.length, 0);
   assert.ok((await fixture({ httpStatus: 503 }).send({ type: 'received-list', uid: 321 })).error);
   assert.ok((await fixture({ response: { h: { c: 4000 } } }).send({ type: 'received-list', uid: 321 })).error);
+});
+
+test('toolbar opens the received list and removed import commands do nothing', async () => {
+  const f = fixture(); await f.action();
+  assert.equal(f.calls[0][1].url, 'https://www.dedao.cn/#dd-redpacket');
+  const count = f.calls.length;
+  assert.equal(f.receive({ type: 'import-link', url: 'https://d.dedao.cn/ExamplePacket1234' }, { url: 'https://www.dedao.cn/', tab: { id: 7 } }, () => assert.fail('removed command')), undefined);
+  assert.equal(f.calls.length, count);
 });
