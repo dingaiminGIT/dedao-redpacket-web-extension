@@ -1,0 +1,5 @@
+.DS_Store
+/artifacts/
+
+/docs/internal/
+__pycache__/
