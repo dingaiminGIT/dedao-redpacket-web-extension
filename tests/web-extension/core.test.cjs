@@ -100,7 +100,7 @@ test('completion follows App finished/progress fields and persists through artic
   const seed = C.received({ ...row, article_item: { ...row.article_item, progress_intro: { progress: 100 } } });
   const item = C.article({ is_red_packet_try: true, article_info: { audio: { listen_finished: false } } }, { ...seed, enid: id });
   assert.equal(C.cachedItem(item).completed, true);
-  assert.equal(C.article({ is_red_packet_try: true, article_info: { is_read: true } }, { enid: id }).completed, null);
+  assert.equal(C.article({ is_red_packet_try: true, article_info: { is_read: true } }, { enid: id }).completed, true);
   assert.equal(C.article({ is_red_packet_try: true, article_info: { audio: { listen_finished: true } } }, { enid: id }).completed, true);
 });
 test('learning filters combine with rights filters and do not label unknown progress incomplete', () => {
@@ -150,4 +150,20 @@ test('widget position stays reachable across dragging, resizing and expanding ne
   assert.deepEqual(C.widgetPosition({ right: 2000, top: -100 }, desktop, panel), { right: 1048, top: 12 });
   assert.deepEqual(C.widgetPosition({ right: NaN, top: Infinity }, desktop, panel), { right: 20, top: 84 });
   assert.deepEqual(C.widgetPosition({ right: 1048, top: 328 }, { width: 390, height: 500 }, { width: 366, height: 476 }), { right: 12, top: 12 });
+});
+
+test('read completion hides an article even when audio is unplayed or partly played', () => {
+  for (const listen_progress of [0, 56]) {
+    const item = C.article({ is_red_packet_try: true, article_info: { is_read: true, audio: { listen_finished: false, listen_progress } } }, { enid: id, completed: false });
+    assert.equal(item.completed, true);
+    assert.equal(C.filter([C.cachedItem(item)], { hideCompleted: true }).length, 0);
+  }
+});
+test('completion recognizes official read, audio and video flags without inferring from partial progress', () => {
+  for (const info of [{ is_read: true }, { audio: { listen_finished: true } }, { video: [{ listen_finished: true }] }]) {
+    assert.equal(C.article({ is_red_packet_try: true, article_info: info }, { enid: id }).completed, true);
+  }
+  const partial = C.article({ is_red_packet_try: true, article_info: { is_read: false, audio: { listen_finished: false, listen_progress: 56 } } }, { enid: id });
+  assert.equal(partial.completed, false); assert.equal(C.filter([partial], { hideCompleted: true }).length, 1);
+  assert.equal(C.article({ is_red_packet_try: true, article_info: { is_read: 'true' } }, { enid: id }).completed, null);
 });

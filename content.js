@@ -211,7 +211,8 @@
       items = saved.items.slice(0, 5000).map(i => C.cachedItem(i)).filter(Boolean);
       updatedAt = Number(saved.updatedAt) || 0;
       cursor = Number(saved.cursor) || 0; hasMore = saved.hasMore === true;
-      syncedAt = Number.isFinite(saved.syncedAt) ? saved.syncedAt : 0;
+      // Recheck metadata once after learning-completion rules change.
+      syncedAt = saved.learningVersion === 2 && Number.isFinite(saved.syncedAt) ? saved.syncedAt : 0;
     } else { items = []; updatedAt = 0; syncedAt = 0; }
   }
   async function save(expectedAccount) {
@@ -223,8 +224,8 @@
     const latest = (await chrome.storage.local.get(key(expectedAccount)))[key(expectedAccount)];
     const previous = Array.isArray(latest?.items) ? latest.items.map(i => C.cachedItem(i)).filter(Boolean) : [];
     items = C.merge(previous, items).map(i => C.cachedItem(i)).filter(Boolean);
-    syncedAt = Math.max(syncedAt, Number.isFinite(latest?.syncedAt) ? latest.syncedAt : 0);
-    await chrome.storage.local.set({ [key(expectedAccount)]: { version: 1, items, updatedAt, syncedAt, cursor, hasMore } });
+    syncedAt = Math.max(syncedAt, latest?.learningVersion === 2 && Number.isFinite(latest.syncedAt) ? latest.syncedAt : 0);
+    await chrome.storage.local.set({ [key(expectedAccount)]: { version: 1, learningVersion: 2, items, updatedAt, syncedAt, cursor, hasMore } });
   }
   async function open() {
     if (opening) return;

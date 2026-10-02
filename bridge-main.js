@@ -22,11 +22,14 @@
     if (typeof data?.is_red_packet_try !== 'boolean') throw Error('文章权益字段缺失，请稍后刷新');
     const rawExpiry = Date.parse(data.article_info?.red_packet_expire_time || '');
     const expireAt = Number.isFinite(rawExpiry) ? rawExpiry : 0;
+    // Official PC UI treats is_read as completed study, independently of audio playback.
+    const progress = [seed.completed, data.article_info?.is_read, data.article_info?.audio?.listen_finished, data.article_info?.video?.[0]?.listen_finished];
+    const completed = progress.includes(true) ? true : progress.includes(false) ? false : null;
     const active = data.is_red_packet_try === true && (!expireAt || expireAt > now);
     return {
       articleId: articleId(data.article_id || seed.articleId), enid: seed.enid, title: clean(data.article_title || seed.title || '未命名文章'),
       course: clean(data.class_title || data.class_info?.name || seed.course || '未分类课程'),
-      completed: seed.completed === true || data.article_info?.audio?.listen_finished === true ? true : seed.completed === false || data.article_info?.audio?.listen_finished === false ? false : null,
+      completed,
       learningCheckedAt: now,
       expiresOn: clean(data.red_packet_expire_day, 40), expireAt,
       status: active ? 'active' : 'expired', checkedAt: now,
