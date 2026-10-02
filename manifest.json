@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "得到知识红包伴侣",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "直接整理已领取的课程知识红包，无需先学习；显示官方到期日，并在得到网页阅读。",
   "permissions": [
     "storage"

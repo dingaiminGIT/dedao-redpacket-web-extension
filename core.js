@@ -64,10 +64,17 @@
       status: i.status === 'expired' || (expireAt && expireAt <= now) ? 'expired' : i.status === 'active' ? 'active' : 'unknown'
     };
   }
-  function filter(items, { query = '', course = '', status = 'active', sort = 'expiry', learning = 'all' } = {}) {
+  function filter(items, { query = '', course = '', status = 'active', sort = 'expiry', learning = 'all', hideCompleted = false } = {}) {
     const term = query.trim().toLocaleLowerCase();
-    return items.filter(i => (learning === 'all' || (learning === 'completed' ? i.completed === true : i.completed === false)) && (!course || i.course === course) && (status === 'all' || i.status === status) && (!term || `${i.title} ${i.course}`.toLocaleLowerCase().includes(term)))
+    return items.filter(i => (!hideCompleted || i.completed !== true) && (learning === 'all' || (learning === 'completed' ? i.completed === true : i.completed === false)) && (!course || i.course === course) && (status === 'all' || i.status === status) && (!term || `${i.title} ${i.course}`.toLocaleLowerCase().includes(term)))
       .sort((a, b) => sort === 'recent' ? b.seenAt - a.seenAt : (a.expireAt || Infinity) - (b.expireAt || Infinity) || b.seenAt - a.seenAt);
+  }
+  function hideCompletedPreference(saved) {
+    return typeof saved?.hideCompleted === 'boolean' ? saved.hideCompleted : saved?.learning === 'incomplete';
+  }
+  function widgetPosition(position, viewport, size) {
+    const clamp = (value, fallback, max) => Math.min(Math.max(12, max), Math.max(12, Number.isFinite(value) ? value : fallback));
+    return { right: clamp(position?.right, 20, viewport.width - size.width - 12), top: clamp(position?.top, 84, viewport.height - size.height - 12) };
   }
   function nextCursor(response, previous, visited) {
     if (!response.has_more) return null;
@@ -90,7 +97,7 @@
     const recent = (stamp, interval) => Number.isFinite(stamp) && stamp > 0 && stamp <= now && now - stamp < interval;
     return !recent(syncedAt, 300000) && !recent(attemptedAt, 60000);
   }
-  const api = { clean, enid, articleId, received, receivedPage, article, merge, cachedItem, filter, nextCursor, runLimited, shouldAutoRefresh };
+  const api = { clean, enid, articleId, received, receivedPage, article, merge, cachedItem, filter, hideCompletedPreference, widgetPosition, nextCursor, runLimited, shouldAutoRefresh };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.DDRedpacketCore = Object.freeze(api);
 })(globalThis);

@@ -23,15 +23,18 @@
   shadow.innerHTML = `<style>
     :host{all:initial;--orange:#ff6b00;--soft-orange:#fff7f2;--ink:#1d1f24;--muted:#70747e;--line:#e8e9ec;color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:13px;color:var(--ink);line-height:1.5}
     *{box-sizing:border-box}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:wait;opacity:.55}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
-    .launch{position:fixed;right:20px;top:84px;z-index:2147483645;border:1px solid #ffd4bf;background:var(--soft-orange);color:#ae3d0c;padding:7px 13px;border-radius:18px;box-shadow:0 3px 12px #38221412;font-weight:650;min-height:34px}.launch[aria-expanded="true"]{border-color:var(--orange)}
-    dialog{position:fixed;inset:auto;top:126px;right:20px;z-index:2147483645;width:min(380px,calc(100vw - 24px));height:min(560px,calc(100dvh - 142px));max-width:none;max-height:none;margin:0;padding:0;border:1px solid #f0d9cc;border-radius:14px;background:#fafafa;color:var(--ink);box-shadow:0 8px 32px #38221424;overflow:hidden}
-    .shell{height:100%;display:flex;flex-direction:column}header{padding:12px 16px;border-bottom:1px solid var(--line);background:#fff;flex-shrink:0}
+    .dock{position:fixed;right:20px;top:84px;z-index:2147483645;width:52px;border:1px solid #f0d9cc;border-radius:22px;background:#fffaf6;box-shadow:0 4px 20px #38221418;overflow:hidden;text-align:center}
+    .launch{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;border:0;background:transparent;color:#ae3d0c;padding:12px 4px 5px;font-size:12px;font-weight:600;line-height:1.4}.launch:hover,.collapse:hover{background:#ffebdd}.launch svg{width:20px;height:20px}.dock-label{font-size:11px;letter-spacing:1px}.dock-count{font-size:13px;font-variant-numeric:tabular-nums}
+    .drag-handle{border:0;background:none;color:#bda394;cursor:grab;touch-action:none;user-select:none;padding:6px;line-height:1}.drag-handle svg{width:18px;height:14px;display:block}.dock .drag-handle{display:flex;justify-content:center;width:100%;padding:7px 0 10px}.drag-handle:hover{color:#a44217}.heading{display:flex;align-items:center;gap:7px;min-width:0}.heading .drag-handle{padding:6px 0;margin-left:-5px}.dragging,.dragging *{cursor:grabbing!important;user-select:none!important}
+    dialog{position:fixed;inset:auto;top:84px;right:20px;z-index:2147483645;width:min(380px,calc(100vw - 24px));height:min(560px,calc(100dvh - 24px));max-width:none;max-height:none;margin:0;padding:0;border:1px solid #f0d9cc;border-radius:16px;background:#fafafa;color:var(--ink);box-shadow:0 8px 32px #38221424;overflow:hidden}
+    .shell{height:100%;display:flex;flex-direction:column}header{padding:12px 16px;border-bottom:1px solid var(--line);background:#fff;flex-shrink:0;cursor:grab;touch-action:none;user-select:none}
     .top,.actions,.summary,.footer,.meta{display:flex;align-items:center;gap:8px}.top,.summary,.footer{justify-content:space-between}h1{margin:0;font-size:17px;font-weight:650}.intro{color:var(--muted);font-size:11px;margin:1px 0 0}
-    .close{border:0;border-radius:6px;width:30px;height:30px;background:var(--soft-orange);color:#a44217;font-size:22px;line-height:1;flex-shrink:0}.actions{flex-shrink:0;gap:8px}
+    .collapse{display:grid;place-items:center;border:0;border-radius:8px;width:30px;height:32px;background:transparent;color:#a44217;flex-shrink:0}.collapse svg{width:20px;height:20px}.actions{flex-shrink:0;gap:8px}
     .primary{border:1px solid var(--orange);background:var(--orange);color:#fff;font-weight:500}.secondary{border:1px solid #f0d9cc;background:var(--soft-orange);color:#aa3d0e}.actions .refresh,.empty button{padding:6px 11px;border-radius:8px;min-height:32px}.actions .cancel{font-size:12px;white-space:nowrap}
     .quiet{border:0;background:none;color:#a44217;padding:4px 2px;text-decoration:underline;text-underline-offset:3px}.stamp{font-size:11px;color:var(--muted)}
     .tools{padding:12px 16px 8px;flex-shrink:0;max-height:55%;overflow:auto}.search-row{display:flex}.search{flex:1;min-height:36px}
     .filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 12px;margin-top:12px}.filter-field{display:flex;flex-direction:column;gap:4px;min-width:0}.filter-label{color:var(--muted);font-size:11px}.filters select{height:33px;font-size:12px;text-overflow:ellipsis}.search,.filters select{min-width:0;width:100%;border:1px solid #dddfe3;border-radius:7px;background:#fff;padding:7px 9px;color:var(--ink)}input::placeholder{color:var(--muted)}
+    .course-field{grid-column:1/-1}.learning-check{display:flex;align-items:center;gap:7px;min-height:32px;margin-top:8px;color:#55545a;font-size:12px;cursor:pointer;width:fit-content}.learning-check input{width:15px;height:15px;margin:0;accent-color:var(--orange);cursor:pointer}
     .status{font-size:11px;color:#747079;margin-top:7px;min-height:17px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.status.error{color:#a33327}.status.quiet-status{position:absolute;width:1px;height:1px;min-height:0;margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
     .summary{padding:5px 16px 10px;font-size:11px;color:var(--muted);flex-shrink:0;gap:5px;flex-wrap:wrap}.summary b{color:var(--ink);font-size:15px;margin-right:3px;font-variant-numeric:tabular-nums}.summary .reset-filters{font-size:11px}.list{flex:1;min-height:0;overflow:auto;padding:0 12px 8px;overscroll-behavior:contain}
     .card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:8px}.course{font-size:11px;color:var(--muted);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-size:14px;font-weight:550;line-height:1.5;margin:0;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -39,19 +42,20 @@
     .card button{align-self:center;border:1px solid #ffd4bf;background:var(--soft-orange);color:#aa3d0e;border-radius:7px;padding:6px 8px;white-space:nowrap;min-height:32px;font-size:12px}.empty{text-align:center;padding:24px 12px;color:var(--muted);font-size:12px}.empty strong{display:block;color:var(--ink);font-size:15px;font-weight:550;margin-bottom:6px}.empty button{margin-top:10px}
     .footer{border-top:1px solid var(--line);padding:8px 12px;font-size:11px;color:var(--muted);flex-shrink:0;flex-wrap:wrap;gap:5px}.footer .quiet{font-size:11px;color:var(--muted)}.footer .more{font-size:12px;padding:6px 10px;border-radius:7px;margin-right:auto}.footer .clear{margin-left:auto}.clear-confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;padding:6px 0}.clear-confirm span{width:100%}.confirm-clear{border:1px solid #a33327;color:#a33327;background:#fff;padding:5px 9px;border-radius:6px}
     [hidden]{display:none!important}
-    @media(max-width:420px){.launch{right:12px}dialog{right:12px}.actions button{padding-left:8px;padding-right:8px}}
-    @media(max-height:540px){.launch{top:12px}dialog{top:54px;height:calc(100dvh - 66px);overflow:auto}.shell{height:auto;min-height:100%}.tools{max-height:none;overflow:visible}.list{flex:none;min-height:120px;max-height:240px}}
+    @media(max-width:420px){.actions button{padding-left:8px;padding-right:8px}}
+    @media(max-height:540px){dialog{overflow:auto}.shell{height:auto;min-height:100%}.tools{max-height:none;overflow:visible}.list{flex:none;min-height:120px;max-height:240px}}
   </style>
-  <button class="launch" aria-haspopup="dialog" aria-controls="dd-rp-dialog" aria-expanded="false">知识红包</button>
+  <div class="dock"><button class="launch" aria-label="展开知识红包" title="展开知识红包" aria-haspopup="dialog" aria-controls="dd-rp-dialog" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg><span class="dock-label">知识<br>红包</span><span class="dock-count" hidden></span></button><button class="drag-handle" aria-label="移动知识红包位置" title="拖动移动 · 方向键微调 · Home 恢复位置"><svg viewBox="0 0 18 14" fill="currentColor" aria-hidden="true"><circle cx="5" cy="3" r="1.5"/><circle cx="12" cy="3" r="1.5"/><circle cx="5" cy="7" r="1.5"/><circle cx="12" cy="7" r="1.5"/><circle cx="5" cy="11" r="1.5"/><circle cx="12" cy="11" r="1.5"/></svg></button></div>
   <dialog aria-modal="false" id="dd-rp-dialog" aria-labelledby="dd-rp-title"><div class="shell">
-    <header><div class="top"><div><h1 id="dd-rp-title">知识红包</h1><p class="intro">已领取 · 课程红包</p></div><div class="actions"><button class="primary refresh" aria-label="刷新红包">刷新</button><button class="quiet cancel" hidden>停止</button><button class="close" aria-label="关闭知识红包">×</button></div></div></header>
+    <header><div class="top"><div class="heading"><button class="drag-handle" aria-label="移动知识红包位置" title="拖动移动 · 方向键微调 · Home 恢复位置"><svg viewBox="0 0 18 14" fill="currentColor" aria-hidden="true"><circle cx="5" cy="3" r="1.5"/><circle cx="12" cy="3" r="1.5"/><circle cx="5" cy="7" r="1.5"/><circle cx="12" cy="7" r="1.5"/><circle cx="5" cy="11" r="1.5"/><circle cx="12" cy="11" r="1.5"/></svg></button><div><h1 id="dd-rp-title">知识红包</h1><p class="intro">已领取 · 课程红包</p></div></div><div class="actions"><button class="primary refresh" aria-label="刷新红包">刷新</button><button class="quiet cancel" hidden>停止</button><button class="collapse" aria-label="收起知识红包" title="收起为浮条"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header>
     <div class="tools"><div class="search-row"><input class="search" type="search" aria-label="搜索文章或课程" placeholder="搜索文章或课程" autofocus></div>
     <div class="filters" id="dd-rp-filters">
-      <label class="filter-field"><span class="filter-label">课程</span><select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select></label>
-      <label class="filter-field"><span class="filter-label">学习状态</span><select class="learning-filter" aria-label="筛选学习状态"><option value="all">全部</option><option value="incomplete">未学完</option><option value="completed">已学完</option></select></label>
+      <label class="filter-field course-field"><span class="filter-label">课程</span><select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select></label>
+
       <label class="filter-field"><span class="filter-label">红包状态</span><select class="status-filter" aria-label="筛选状态"><option value="active">有效红包</option><option value="all">全部记录</option><option value="expired">权益已失效</option></select></label>
       <label class="filter-field"><span class="filter-label">排序</span><select class="sort" aria-label="排序"><option value="expiry">即将到期优先</option><option value="recent">最近领取优先</option></select></label>
     </div>
+    <label class="learning-check"><input class="hide-completed" type="checkbox">隐藏已学完</label>
     <div class="status quiet-status" role="status" aria-live="polite">打开后自动读取已领取的课程红包。</div></div>
     <div class="summary"><span><b class="count">0</b>篇<span class="count-context">有效红包</span></span><button class="quiet reset-filters" hidden>重置筛选</button><span class="stamp">尚未刷新</span></div><div class="list" aria-label="知识红包列表"></div>
     <div class="footer"><button class="secondary more" hidden>加载更早的红包</button><button class="quiet clear" aria-label="清除本账号缓存">清缓存</button><div class="clear-confirm" hidden><span>仅清除本机列表，得到账号中的内容会保留。</span><button class="confirm-clear">确认清除</button><button class="quiet cancel-clear">取消</button></div></div>
@@ -63,6 +67,64 @@
   let syncedAt = 0;
   const autoAttempts = new Map();
   const key = id => `redpacket:v2:${id}`;
+  const positionKey = 'redpacket:widget-position';
+  let position = { right: 20, top: 84 }, positionChanged = false;
+  function placeWidget() {
+    const el = $('dialog').open ? $('dialog') : $('.dock');
+    const rect = el.getBoundingClientRect();
+    const point = C.widgetPosition(position, { width: innerWidth, height: innerHeight }, { width: rect.width, height: rect.height });
+    el.style.right = `${point.right}px`; el.style.top = `${point.top}px`;
+    return point;
+  }
+  function persistPosition() {
+    positionChanged = true;
+    chrome.storage.local.set({ [positionKey]: position }).catch(() => status('位置保存失败，本次移动仍有效', true));
+  }
+  const positionReady = chrome.storage.local.get(positionKey).then(saved => {
+    if (!positionChanged && saved[positionKey]) position = saved[positionKey];
+    placeWidget();
+  }).catch(() => placeWidget());
+  window.addEventListener('resize', placeWidget);
+  function makeDraggable(surface) {
+    let drag = null, suppressUntil = 0;
+    surface.addEventListener('pointerdown', e => {
+      if (e.button !== 0 || !e.isPrimary || e.target.closest('button:not(.drag-handle),input,select,a')) return;
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, start: placeWidget(), original: position, moved: false };
+      positionChanged = true;
+      surface.setPointerCapture(e.pointerId);
+      e.preventDefault();
+      e.target.closest('.drag-handle')?.focus({ preventScroll: true });
+    });
+    surface.addEventListener('dragstart', e => e.preventDefault());
+    surface.addEventListener('pointermove', e => {
+      if (!drag || drag.id !== e.pointerId) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+      drag.moved = true; surface.classList.add('dragging'); e.preventDefault();
+      position = { right: drag.start.right - dx, top: drag.start.top + dy };
+      position = placeWidget();
+    });
+    const finish = e => {
+      if (!drag || drag.id !== e.pointerId) return;
+      const current = drag; drag = null; surface.classList.remove('dragging');
+      if (e.type === 'pointercancel') { position = current.original; placeWidget(); }
+      else if (current.moved) { suppressUntil = performance.now() + 300; persistPosition(); }
+      if (surface.hasPointerCapture(e.pointerId)) surface.releasePointerCapture(e.pointerId);
+    };
+    for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) surface.addEventListener(event, finish);
+    surface.addEventListener('click', e => { if (performance.now() < suppressUntil && !e.target.closest('button:not(.drag-handle)')) { e.preventDefault(); e.stopPropagation(); } }, true);
+  }
+  makeDraggable($('header')); makeDraggable($('.dock .drag-handle'));
+  for (const handle of shadow.querySelectorAll('.drag-handle')) {
+    handle.addEventListener('keydown', e => {
+      const directions = { ArrowLeft: [1, 0], ArrowRight: [-1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+      if (e.key === 'Home') position = { right: 20, top: 84 };
+      else if (directions[e.key]) { const p = placeWidget(), [x, y] = directions[e.key], step = e.shiftKey ? 40 : 10; position = { right: p.right + x * step, top: p.top + y * step }; }
+      else return;
+      e.preventDefault(); position = placeWidget(); persistPosition();
+    });
+    handle.addEventListener('dblclick', () => { position = { right: 20, top: 84 }; placeWidget(); persistPosition(); });
+  }
   const formatTime = value => new Date(value).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   function status(message, error = false) { $('.status').textContent = message; $('.status').title = message; $('.status').classList.toggle('error', error); $('.status').classList.toggle('quiet-status', !error && !busy); }
   function setBusy(value, allowCancel = false) {
@@ -73,23 +135,26 @@
     $('.list').setAttribute('aria-busy', String(value));
   }
   function resetFilters() {
-    $('.search').value = ''; $('.course-filter').value = ''; $('.status-filter').value = 'active'; $('.sort').value = 'expiry'; $('.learning-filter').value = 'all'; persistLearningFilter();
+    $('.search').value = ''; $('.course-filter').value = ''; $('.status-filter').value = 'active'; $('.sort').value = 'expiry'; $('.hide-completed').checked = false; persistLearningFilter();
     draw(); $('.search').focus();
   }
   function closePanel(restoreFocus = true) {
-    $('dialog').close(); $('.launch').setAttribute('aria-expanded', 'false');
+    $('dialog').close(); $('.dock').hidden = false; $('.launch').setAttribute('aria-expanded', 'false'); placeWidget();
     if (restoreFocus) $('.launch').focus();
   }
   function draw() {
     const scrollTop = $('.list').scrollTop;
-    const filtered = Boolean($('.search').value.trim() || $('.course-filter').value || $('.status-filter').value !== 'active' || $('.learning-filter').value !== 'all' || $('.sort').value !== 'expiry');
+    const validCount = items.filter(i => i.status === 'active').length;
+    $('.dock-count').hidden = !account; $('.dock-count').textContent = `${validCount} 篇`;
+    $('.launch').setAttribute('aria-label', account ? `展开知识红包，${validCount} 篇有效` : '展开知识红包');
+    const filtered = Boolean($('.search').value.trim() || $('.course-filter').value || $('.status-filter').value !== 'active' || $('.hide-completed').checked || $('.sort').value !== 'expiry');
     $('.reset-filters').hidden = !filtered;
     $('.count-context').textContent = filtered ? '筛选结果' : '有效红包';
     const selected = $('.course-filter').value;
     $('.course-filter').replaceChildren(new Option('全部课程', ''));
     for (const name of [...new Set(items.map(i => i.course))].sort()) $('.course-filter').append(new Option(name, name));
     $('.course-filter').value = selected; $('.course-filter').title = selected || '全部课程';
-    const rows = C.filter(items, { query: $('.search').value, course: $('.course-filter').value, status: $('.status-filter').value, sort: $('.sort').value, learning: $('.learning-filter').value });
+    const rows = C.filter(items, { query: $('.search').value, course: $('.course-filter').value, status: $('.status-filter').value, sort: $('.sort').value, hideCompleted: $('.hide-completed').checked });
     $('.count').textContent = String(rows.length); $('.list').replaceChildren();
     $('.more').hidden = !hasMore;
     $('.stamp').textContent = updatedAt ? `上次核验 ${formatTime(updatedAt)}` : '尚未刷新';
@@ -119,17 +184,17 @@
       $('.list').append(card);
     }
     $('.list').scrollTop = scrollTop;
+    if (!$('dialog').open) placeWidget();
   }
   const preferenceKey = id => `redpacket:preferences:${id}`;
   function persistLearningFilter() {
-    if (account) chrome.storage.local.set({ [preferenceKey(account)]: { learning: $('.learning-filter').value } }).catch(() => status('学习筛选设置保存失败，请重试', true));
+    if (account) chrome.storage.local.set({ [preferenceKey(account)]: { hideCompleted: $('.hide-completed').checked } }).catch(() => status('学习筛选设置保存失败，请重试', true));
   }
   async function loadAccount() {
     const ctx = await rpc('context');
     if (account !== ctx.account) { account = ctx.account; items = []; cursor = 0; hasMore = false; visited.clear(); updatedAt = 0; syncedAt = 0; }
     const stored = await chrome.storage.local.get([key(account), preferenceKey(account)]);
-    const learning = stored[preferenceKey(account)]?.learning;
-    $('.learning-filter').value = ['all', 'incomplete', 'completed'].includes(learning) ? learning : 'all';
+    $('.hide-completed').checked = C.hideCompletedPreference(stored[preferenceKey(account)]);
     let saved = stored[key(account)];
     if (!saved) {
       const legacyKey = `redpacket:v1:${account}`;
@@ -159,7 +224,7 @@
     if (opening) return;
     $('.clear-confirm').hidden = true;
     if (! $('dialog').open) $('dialog').show();
-    $('.launch').setAttribute('aria-expanded', 'true');
+    $('.dock').hidden = true; $('.launch').setAttribute('aria-expanded', 'true'); placeWidget();
     if (busy) return;
     opening = true; setBusy(true);
     let loaded = false;
@@ -248,17 +313,14 @@
     finally { reading = false; if (!syncing) setBusy(false); draw(); }
   }
   $('.launch').addEventListener('click', () => $('dialog').open ? closePanel() : open());
-  $('.close').addEventListener('click', () => closePanel());
-  document.addEventListener('pointerdown', e => {
-    if ($('dialog').open && !e.composedPath().includes(host)) closePanel(false);
-  });
+  $('.collapse').addEventListener('click', () => closePanel());
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && $('dialog').open) { closePanel(); e.preventDefault(); }
   });
   $('.refresh').addEventListener('click', () => sync()); $('.more').addEventListener('click', () => sync(true));
   $('.cancel').addEventListener('click', () => { cancelled = true; status('正在停止，将保留已完成的核验结果…'); });
   $('.reset-filters').addEventListener('click', resetFilters);
-  $('.learning-filter').addEventListener('input', () => { persistLearningFilter(); draw(); });
+  $('.hide-completed').addEventListener('change', () => { persistLearningFilter(); draw(); });
   for (const selector of ['.search', '.course-filter', '.status-filter', '.sort']) $(selector).addEventListener('input', draw);
   $('.clear').addEventListener('click', () => { $('.clear-confirm').hidden = false; $('.cancel-clear').focus(); });
   $('.cancel-clear').addEventListener('click', () => { $('.clear-confirm').hidden = true; $('.clear').focus(); });
@@ -273,5 +335,5 @@
     if (area === 'local' && account && changes[key(account)] && !busy && $('dialog').open) status('其他页面已更新红包列表，重新打开面板即可载入。');
   });
   draw();
-  if (location.hash === '#dd-redpacket') open();
+  positionReady.then(() => { if (location.hash === '#dd-redpacket') open(); });
 })();

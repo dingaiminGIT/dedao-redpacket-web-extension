@@ -134,3 +134,20 @@ test('detail failure preserves authoritative list rights and an explicit renewal
   assert.equal(C.cachedItem(fresh, 200).status, 'active'); assert.equal(fresh.enid, id);
   assert.equal(C.merge([fresh], [old], 200)[0].status, 'active');
 });
+
+test('hide completed mirrors App: only completed articles are hidden, with unknown progress retained', () => {
+  const items = [{ title: 'done', status: 'active', completed: true }, { title: 'todo', status: 'active', completed: false }, { title: 'unknown', status: 'active', completed: null }];
+  assert.deepEqual(C.filter(items, { hideCompleted: true }).map(i => i.title), ['todo', 'unknown']);
+  assert.equal(C.filter(items, { hideCompleted: false }).length, 3);
+  assert.equal(C.hideCompletedPreference({ learning: 'incomplete' }), true);
+  assert.equal(C.hideCompletedPreference({ learning: 'completed' }), false);
+  assert.equal(C.hideCompletedPreference({ hideCompleted: false, learning: 'incomplete' }), false);
+  assert.equal(C.hideCompletedPreference(), false);
+});
+test('widget position stays reachable across dragging, resizing and expanding near screen edges', () => {
+  const desktop = { width: 1440, height: 900 }, panel = { width: 380, height: 560 };
+  assert.deepEqual(C.widgetPosition({ right: -100, top: 2000 }, desktop, panel), { right: 12, top: 328 });
+  assert.deepEqual(C.widgetPosition({ right: 2000, top: -100 }, desktop, panel), { right: 1048, top: 12 });
+  assert.deepEqual(C.widgetPosition({ right: NaN, top: Infinity }, desktop, panel), { right: 20, top: 84 });
+  assert.deepEqual(C.widgetPosition({ right: 1048, top: 328 }, { width: 390, height: 500 }, { width: 366, height: 476 }), { right: 12, top: 12 });
+});
