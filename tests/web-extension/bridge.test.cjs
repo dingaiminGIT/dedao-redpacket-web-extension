@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const base = path.join(__dirname, '../..');
-function fixture({ account = 'account-one', logged = true, fail = false, respond } = {}) {
+function fixture({ account = 'account-one', logged = true, fail = false, header = { c: 0 }, respond } = {}) {
   const calls = [], replies = [];
   let listener;
   const win = { __INITIAL_STATE__: { uid: logged ? 123 : 0 }, addEventListener(name, fn) { listener = fn; }, postMessage(value) { replies.push(value); } };
@@ -12,7 +12,7 @@ function fixture({ account = 'account-one', logged = true, fail = false, respond
     async fetch(url, options) {
       calls.push({ url, options });
       const data = respond ? respond(url, JSON.parse(options.body || '{}')) : url.endsWith('/user/info') ? { uid_hazy: account } : url.endsWith('/has') ? { uid: 321 } : { is_red_packet_try: true, article_title: '文章', red_packet_expire_day: '10月4日', dd_article_token: 'SECRET', audio: { url: 'SECRET' } };
-      return { ok: !fail, status: fail ? 401 : 200, async json() { return { h: { c: 0 }, c: data }; } };
+      return { ok: !fail, status: fail ? 401 : 200, async json() { return { h: header, c: data }; } };
     }
   });
   vm.runInContext(fs.readFileSync(path.join(base, 'core.js'), 'utf8'), context);
@@ -66,5 +66,21 @@ test('same-title search results are accepted only after the numeric article ID m
 test('no exact search result leaves the received article unresolved', async () => {
   const f = fixture({ respond() { return { list: [{ title: '不同文章', extra: { token: 'WrongArticle1234' } }] }; } });
   const r = await f.send('article', { articleId: 3543, title: '目标文章' });
-  assert.match(r.error, /待核验/); assert.equal(f.calls.length, 1);
+  assert.match(r.error, /权益状态不受影响/); assert.equal(f.calls.length, 1);
+});
+
+test('explicit no-full-text response is expired rather than a retry, and still checks identity', async () => {
+  const f = fixture({ header: { c: 4000, e: '无阅读全文权限' }, respond() { return { article_id: 123, is_red_packet_try: false, dd_article_token: 'SECRET' }; } });
+  const reply = await f.send('article', { articleId: 123, enid: 'abcdefgh12345678' });
+  assert.equal(reply.result.status, 'expired'); assert.equal(JSON.stringify(reply).includes('SECRET'), false);
+  assert.match((await f.send('article', { articleId: 456, enid: 'abcdefgh12345678' })).error, /编号不匹配/);
+});
+test('other business failures and malformed permission responses cannot revoke rights', async () => {
+  for (const [code, data] of [[4000, {}], [4000, { article_id: 123, is_red_packet_try: true }], [5000, { article_id: 123, is_red_packet_try: false }], [0, { article_id: 123 }]]) {
+    const f = fixture({ header: { c: code }, respond() { return data; } });
+    const reply = await f.send('article', { articleId: 123, enid: 'abcdefgh12345678' });
+    assert.ok(reply.error); assert.equal(reply.result, undefined);
+  }
+  const f = fixture({ header: { c: 4000 }, respond() { return { article_id: 123, is_red_packet_try: false }; } });
+  assert.ok((await f.send('context')).error);
 });

@@ -49,7 +49,7 @@
     <div class="filters" id="dd-rp-filters">
       <label class="filter-field"><span class="filter-label">课程</span><select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select></label>
       <label class="filter-field"><span class="filter-label">学习状态</span><select class="learning-filter" aria-label="筛选学习状态"><option value="all">全部</option><option value="incomplete">未学完</option><option value="completed">已学完</option></select></label>
-      <label class="filter-field"><span class="filter-label">红包状态</span><select class="status-filter" aria-label="筛选状态"><option value="active">有效红包</option><option value="all">全部记录</option><option value="unknown">待核验</option><option value="expired">权益已失效</option></select></label>
+      <label class="filter-field"><span class="filter-label">红包状态</span><select class="status-filter" aria-label="筛选状态"><option value="active">有效红包</option><option value="all">全部记录</option><option value="expired">权益已失效</option></select></label>
       <label class="filter-field"><span class="filter-label">排序</span><select class="sort" aria-label="排序"><option value="expiry">即将到期优先</option><option value="recent">最近领取优先</option></select></label>
     </div>
     <div class="status quiet-status" role="status" aria-live="polite">打开后自动读取已领取的课程红包。</div></div>
@@ -96,7 +96,7 @@
     if (!rows.length) {
       const box = document.createElement('div'); box.className = 'empty';
       const title = document.createElement('strong'); title.textContent = busy ? '正在加载红包…' : items.length ? '这个筛选下还没有文章' : '等一篇值得读的好内容';
-      const text = document.createElement('div'); text.textContent = busy ? '核验完成的文章会陆续显示，无需等全部结束。' : items.length ? '试试其他关键词、课程或状态。' : '请刷新已领取列表；历史红包可继续加载。';
+      const text = document.createElement('div'); text.textContent = busy ? '已领取的红包会陆续显示，无需等全部结束。' : items.length ? '试试其他关键词、课程或状态。' : '请刷新已领取列表；历史红包可继续加载。';
       box.append(title, text);
       const action = document.createElement('button'); action.className = 'secondary';
       action.textContent = filtered ? '重置筛选' : '刷新红包';
@@ -108,7 +108,7 @@
       const info = document.createElement('div'), course = document.createElement('div'), title = document.createElement('h2'), meta = document.createElement('div'), expiry = document.createElement('span');
       course.className = 'course'; course.textContent = item.course; course.title = item.course; title.className = 'title'; title.textContent = item.title; title.title = item.title;
       meta.className = 'meta'; expiry.className = item.status === 'active' ? 'expiry' : 'muted';
-      expiry.textContent = item.status === 'active' ? (item.expiresOn ? `有效至 ${item.expiresOn}` : '有效期未返回') : item.status === 'unknown' ? '暂未核验，请刷新重试' : '红包权益已失效';
+      expiry.textContent = item.status === 'active' ? (item.expiresOn ? `有效至 ${item.expiresOn}` : '红包有效') : item.status === 'unknown' ? '权益状态暂未获取' : '红包权益已失效';
       if (item.status === 'active' && item.expireAt > Date.now() && item.expireAt - Date.now() <= 86400000) {
         expiry.classList.add('urgent'); expiry.textContent += ' · 24小时内到期';
       }
@@ -189,15 +189,15 @@
       const checked = new Set();
       const identity = item => item.articleId ? `article:${item.articleId}` : item.enid;
       const verify = async batch => {
-        const fresh = batch.filter(seed => !checked.has(identity(seed)));
+        const fresh = batch.filter(seed => seed.status !== 'expired' && !checked.has(identity(seed)));
         fresh.forEach(seed => checked.add(identity(seed)));
         await C.runLimited(fresh, 4, async seed => {
           let result;
           try { result = await rpc('article', seed); }
-          catch { failures++; result = { ...seed, status: 'unknown', checkedAt: Date.now() }; }
+          catch { failures++; result = C.cachedItem(seed); }
           items = C.merge(items, [result]); updatedAt = Date.now(); verified++;
           draw();
-          status(`已核验 ${verified} 篇，${items.filter(i => i.status === 'active').length} 篇红包可阅读${cancelled ? '，正在停止…' : '，继续加载中…'}`);
+          status(`已更新 ${verified} 篇文章详情，${items.filter(i => i.status === 'active').length} 篇有效红包${cancelled ? '，正在停止…' : '，继续加载中…'}`);
         }, () => cancelled);
       };
       if (!more) { cursor = 0; visited = new Set(); hasMore = false; }
@@ -209,8 +209,9 @@
           if ((await rpc('context')).account !== expectedAccount) throw Error('账号已切换，请重新打开面板');
           const page = reply.result;
           examined += page.count;
-          // Preserve mapped IDs from cache and keep unresolved entries when cancelled.
+          // Rights come directly from the received list; article requests enrich metadata.
           items = C.merge(items, page.items);
+          draw();
           const pageKeys = new Set(page.items.map(identity));
           const next = C.nextCursor(page, cursor, visited);
           hasMore = next !== null;
@@ -221,9 +222,9 @@
       }
       if (!more && !cancelled) await verify(items);
       updatedAt = Date.now();
-      if (!more && !cancelled && !pagingError && !failures) syncedAt = updatedAt;
+      if (!more && !cancelled && !pagingError) syncedAt = updatedAt;
       await save(expectedAccount); draw();
-      status(`${cancelled ? '已停止更新。' : '已更新。'}${items.filter(i => i.status === 'active').length} 篇有效红包。${failures ? ` ${failures} 篇待重试。` : ''}${hasMore ? ' 可加载更早领取的红包。' : ''}${pagingError ? ` ${pagingError}` : ''}`, Boolean(pagingError || failures));
+      status(`${cancelled ? '已停止更新。' : '已更新。'}${items.filter(i => i.status === 'active').length} 篇有效红包。${failures ? ` ${failures} 篇文章详情暂未更新，已保留红包权益状态。` : ''}${hasMore ? ' 可加载更早领取的红包。' : ''}${pagingError ? ` ${pagingError}` : ''}`, Boolean(pagingError || failures));
     } catch (e) { if (originalAccount !== account) draw(); status(e.message, true); }
     finally { setBusy(false); $('.refresh').textContent = '刷新'; draw(); }
   }

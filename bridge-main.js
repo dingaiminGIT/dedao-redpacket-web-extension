@@ -5,18 +5,21 @@
   const enid = value => typeof value === 'string' && /^[A-Za-z0-9]{8,100}$/.test(value);
   const articleId = value => Number.isSafeInteger(Number(value)) && Number(value) > 0 ? Number(value) : 0;
   const itemKey = item => articleId(item.articleId) ? `article:${item.articleId}` : enid(item.enid) ? item.enid : '';
-  function received(row) {
+  function received(row, now = Date.now()) {
     const a = row.article_item;
-    if (row.authority_intro?.red_packet_rights !== true || a?.product_type !== 65 || !articleId(a.id)) return null;
-    return { articleId: articleId(a.id), enid: enid(a.enid) ? a.enid : '', title: clean(a.product_title), course: clean(row.product_title), seenAt: Number(row.collection_timestamp) || 0, completed: a.is_finished === 1 || row.is_finished === 1 || Number((a.progress_intro || row.progress_intro || {}).progress) >= 100, learningCheckedAt: Date.now(), status: 'unknown' };
+    if (a?.product_type !== 65 || !articleId(a.id)) return null;
+    const rights = row.authority_intro?.red_packet_rights;
+    if (typeof rights !== 'boolean') throw Error('红包权益字段缺失，请稍后刷新');
+    return { articleId: articleId(a.id), enid: enid(a.enid) ? a.enid : '', title: clean(a.product_title), course: clean(row.product_title), seenAt: Number(row.collection_timestamp) || 0, completed: a.is_finished === 1 || row.is_finished === 1 || Number((a.progress_intro || row.progress_intro || {}).progress) >= 100, learningCheckedAt: now, checkedAt: now, status: rights ? 'active' : 'expired' };
   }
   function receivedPage(data) {
     if (!Array.isArray(data?.list) || typeof data.is_more !== 'boolean') throw Error('已领取红包列表格式已变化');
     const stamps = data.list.map(row => Number(row.collection_timestamp));
-    return { items: data.list.map(received).filter(Boolean), count: data.list.length, has_more: data.is_more, timestamp: stamps.length && stamps.every(n => Number.isFinite(n) && n > 0) ? Math.min(...stamps) : 0 };
+    return { items: data.list.map(row => received(row)).filter(Boolean), count: data.list.length, has_more: data.is_more, timestamp: stamps.length && stamps.every(n => Number.isFinite(n) && n > 0) ? Math.min(...stamps) : 0 };
   }
   function article(data, seed = {}, now = Date.now()) {
     if (!enid(seed.enid)) throw Error('文章标识无效');
+    if (typeof data?.is_red_packet_try !== 'boolean') throw Error('文章权益字段缺失，请稍后刷新');
     const rawExpiry = Date.parse(data.article_info?.red_packet_expire_time || '');
     const expireAt = Number.isFinite(rawExpiry) ? rawExpiry : 0;
     const active = data.is_red_packet_try === true && (!expireAt || expireAt > now);
@@ -30,7 +33,7 @@
       seenAt: Number(seed.seenAt) || now, manual: seed.manual === true
     };
   }
-  function merge(items, incoming) {
+  function merge(items, incoming, now = Date.now()) {
     const result = new Map();
     for (const item of [...items, ...incoming]) {
       const key = itemKey(item);
@@ -39,6 +42,12 @@
       const old = result.get(key) || result.get(sameEnid);
       if (sameEnid && sameEnid !== key) result.delete(sameEnid);
       const newest = old?.checkedAt > (item.checkedAt || 0) ? { ...item, ...old } : { ...old, ...item };
+      // A list row may omit the web ID; preserve an already verified mapping.
+      newest.enid = enid(item.enid) ? item.enid : old?.enid || '';
+      // A renewed grant must not inherit an elapsed deadline from an earlier grant.
+      if (newest.status === 'active' && newest.expireAt && newest.expireAt <= now && item.status === 'active' && item.checkedAt >= (old?.checkedAt || 0) && !item.expireAt) {
+        newest.expireAt = 0; newest.expiresOn = '';
+      }
       const progress = (item.learningCheckedAt || 0) >= (old?.learningCheckedAt || 0) ? item : old;
       result.set(key, { ...newest, completed: progress?.completed ?? newest.completed ?? null, learningCheckedAt: progress?.learningCheckedAt || 0, manual: Boolean(old?.manual || item.manual) });
     }
@@ -104,7 +113,10 @@
     if (r.status === 401) throw Error('登录已失效，请先在得到网页重新登录');
     if (!r.ok) throw Error(`官方接口暂不可用（HTTP ${r.status}）`);
     const result = await r.json();
-    if (result.h?.c !== 0) throw Error(`官方接口未通过核验（${result.h?.c ?? '响应格式变化'}）`);
+    // The article API returns permission metadata with 4000 when full-text rights have ended.
+    // Accept only the explicit redpacket denial, and still verify the article ID below.
+    const denied = path === articlePath && result.h?.c === 4000 && result.c?.is_red_packet_try === false && C.articleId(result.c?.article_id);
+    if (result.h?.c !== 0 && !denied) throw Error(`官方接口未通过核验（${result.h?.c ?? '响应格式变化'}）`);
     return result.c;
   }
   async function context() {
@@ -133,7 +145,7 @@
           const data = await request(articlePath, { detail_id: match.extra.token, with_perm_info: true });
           if (Number(data.article_id) === Number(args.articleId)) return C.article(data, { ...args, enid: match.extra.token });
         }
-        throw Error('暂未匹配到对应网页文章，已保留为待核验');
+        throw Error('暂未找到对应网页文章，红包权益状态不受影响');
       }
       const data = await request(articlePath, { detail_id: token, with_perm_info: true });
       if (C.articleId(args.articleId) && Number(data.article_id) !== Number(args.articleId)) throw Error('文章编号不匹配，已停止打开');

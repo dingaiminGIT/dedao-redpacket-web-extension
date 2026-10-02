@@ -14,7 +14,10 @@
     if (r.status === 401) throw Error('登录已失效，请先在得到网页重新登录');
     if (!r.ok) throw Error(`官方接口暂不可用（HTTP ${r.status}）`);
     const result = await r.json();
-    if (result.h?.c !== 0) throw Error(`官方接口未通过核验（${result.h?.c ?? '响应格式变化'}）`);
+    // The article API returns permission metadata with 4000 when full-text rights have ended.
+    // Accept only the explicit redpacket denial, and still verify the article ID below.
+    const denied = path === articlePath && result.h?.c === 4000 && result.c?.is_red_packet_try === false && C.articleId(result.c?.article_id);
+    if (result.h?.c !== 0 && !denied) throw Error(`官方接口未通过核验（${result.h?.c ?? '响应格式变化'}）`);
     return result.c;
   }
   async function context() {
@@ -43,7 +46,7 @@
           const data = await request(articlePath, { detail_id: match.extra.token, with_perm_info: true });
           if (Number(data.article_id) === Number(args.articleId)) return C.article(data, { ...args, enid: match.extra.token });
         }
-        throw Error('暂未匹配到对应网页文章，已保留为待核验');
+        throw Error('暂未找到对应网页文章，红包权益状态不受影响');
       }
       const data = await request(articlePath, { detail_id: token, with_perm_info: true });
       if (C.articleId(args.articleId) && Number(data.article_id) !== Number(args.articleId)) throw Error('文章编号不匹配，已停止打开');

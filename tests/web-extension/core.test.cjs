@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const C = require('../../core.js');
 const id = 'ExampleArticle12345678';
 test('purchased or trial-only content never masquerades as an active redpacket', () => {
-  for (const raw of [{ is_buy: 1 }, { is_user_free_try: true }, { is_red_packet_try: false }]) assert.equal(C.article(raw, { enid: id }).status, 'expired');
+  for (const raw of [{ is_buy: 1, is_red_packet_try: false }, { is_user_free_try: true, is_red_packet_try: false }]) assert.equal(C.article(raw, { enid: id }).status, 'expired');
+  for (const raw of [{ is_buy: 1 }, { is_user_free_try: true }, {}]) assert.throws(() => C.article(raw, { enid: id }), /权益字段缺失/);
 });
 test('official expiry label is preserved while a known elapsed deadline revokes active status', () => {
   const raw = { is_red_packet_try: true, red_packet_expire_day: '10月4日', article_info: { red_packet_expire_time: '2026-10-04T16:00:00Z' } };
@@ -56,8 +57,9 @@ test('received list includes never-studied course redpackets and preserves unres
   const page = C.receivedPage({ list: [row], is_more: true });
   assert.equal(page.items.length, 1); assert.equal(page.items[0].articleId, 3543);
   assert.equal(page.timestamp, 123); assert.equal(page.has_more, true);
-  assert.equal(C.cachedItem(page.items[0]).status, 'unknown');
-  assert.equal(C.received({ ...row, authority_intro: { red_packet_rights: false } }), null);
+  assert.equal(C.cachedItem(page.items[0]).status, 'active');
+  assert.equal(C.received({ ...row, authority_intro: { red_packet_rights: false } }).status, 'expired');
+  assert.throws(() => C.received({ ...row, authority_intro: {} }), /权益字段缺失/);
   assert.equal(C.received({ ...row, article_item: { ...row.article_item, product_type: 1013 } }), null);
 });
 test('resolving a received article and reloading its numeric seed never creates duplicates', () => {
@@ -98,8 +100,8 @@ test('completion follows App finished/progress fields and persists through artic
   const seed = C.received({ ...row, article_item: { ...row.article_item, progress_intro: { progress: 100 } } });
   const item = C.article({ is_red_packet_try: true, article_info: { audio: { listen_finished: false } } }, { ...seed, enid: id });
   assert.equal(C.cachedItem(item).completed, true);
-  assert.equal(C.article({ article_info: { is_read: true } }, { enid: id }).completed, null);
-  assert.equal(C.article({ article_info: { audio: { listen_finished: true } } }, { enid: id }).completed, true);
+  assert.equal(C.article({ is_red_packet_try: true, article_info: { is_read: true } }, { enid: id }).completed, null);
+  assert.equal(C.article({ is_red_packet_try: true, article_info: { audio: { listen_finished: true } } }, { enid: id }).completed, true);
 });
 test('learning filters combine with rights filters and do not label unknown progress incomplete', () => {
   const items = [{ title: 'done', course: 'A', status: 'active', completed: true }, { title: 'todo', course: 'A', status: 'active', completed: false }, { title: 'unknown', course: 'A', status: 'active', completed: null }, { title: 'expired', course: 'A', status: 'expired', completed: true }];
@@ -112,4 +114,23 @@ test('fresh list progress replaces stale progress without discarding a verified 
   const incoming = { articleId: 123, enid: '', completed: true, learningCheckedAt: 600 };
   const result = C.merge([old], [incoming])[0];
   assert.equal(result.completed, true); assert.equal(result.enid, id);
+});
+
+test('official list denial replaces stale valid and retry states while retaining web mapping', () => {
+  const row = { authority_intro: { red_packet_rights: false }, article_item: { id: 123, product_type: 65, product_title: '文章' } };
+  for (const status of ['active', 'unknown']) {
+    const old = { articleId: 123, enid: id, status, checkedAt: 100, expireAt: 150 };
+    const item = C.merge([old], [C.received(row, 200)], 200)[0];
+    assert.equal(item.status, 'expired'); assert.equal(item.enid, id);
+    assert.equal(C.cachedItem(item, 200).status, 'expired');
+  }
+});
+test('detail failure preserves authoritative list rights and an explicit renewal drops stale expiry', () => {
+  const row = { authority_intro: { red_packet_rights: true }, article_item: { id: 123, product_type: 65, product_title: '文章' } };
+  const old = { articleId: 123, enid: id, status: 'expired', checkedAt: 100, expireAt: 150, expiresOn: '旧日期' };
+  const fresh = C.merge([old], [C.received(row, 200)], 200)[0];
+  assert.equal(fresh.expireAt, 0); assert.equal(fresh.expiresOn, '');
+  // Sync uses cachedItem on a detail request failure, preserving the list's decision.
+  assert.equal(C.cachedItem(fresh, 200).status, 'active'); assert.equal(fresh.enid, id);
+  assert.equal(C.merge([fresh], [old], 200)[0].status, 'active');
 });
