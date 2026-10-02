@@ -34,8 +34,8 @@
     .quiet{border:0;background:none;color:#a44217;padding:4px 2px;text-decoration:underline;text-underline-offset:3px}.stamp{font-size:11px;color:var(--muted)}
     .tools{padding:12px 16px 8px;flex-shrink:0;max-height:55%;overflow:auto}.search-row{display:flex}.search{flex:1;min-height:36px}
     .search{min-width:0;width:100%;border:1px solid #dddfe3;border-radius:8px;background:#fff;padding:7px 9px;color:var(--ink)}input::placeholder{color:var(--muted)}
-    .status-tabs{display:flex;gap:3px;background:#f0eeec;border-radius:9px;padding:3px;margin-top:12px}.status-choice{position:relative;flex:1;min-width:0;cursor:pointer}.status-choice input{position:absolute;opacity:0;width:1px;height:1px;margin:0}.status-choice span{display:block;padding:5px 6px;text-align:center;border:1px solid transparent;border-radius:6px;font-size:12px;color:#747079;line-height:20px}.status-choice:hover span{color:#a44217}.status-choice input:checked+span{background:#fff;border-color:#f0d9cc;color:#aa3d0e;font-weight:600;box-shadow:0 1px 3px #3822140a}.status-choice input:focus-visible+span{outline:2px solid var(--orange);outline-offset:1px}
-    .filters{display:grid;grid-template-columns:minmax(0,1fr) 116px;gap:8px;margin-top:10px}.filters select{height:34px;min-width:0;width:100%;font-size:12px;border:1px solid #e4e1de;border-radius:7px;background:#fff;padding:6px 8px;color:#55545a;text-overflow:ellipsis;cursor:pointer}.filters select:hover{border-color:#e3bda6}.filters select:focus-visible{outline:2px solid #ffb486;outline-offset:1px}.filters select.is-filtered{border-color:#f1cbb5;color:#a44217;background:#fffaf6}
+    .filters{margin-top:10px}.course-filter{height:36px;min-width:0;width:100%;font-size:12px;border:1px solid #e4e1de;border-radius:8px;background:#fff;padding:7px 10px;color:#55545a;text-overflow:ellipsis;cursor:pointer}.course-filter:hover{border-color:#e3bda6}.course-filter:focus-visible{outline:2px solid #ffb486;outline-offset:1px}.course-filter.is-filtered{border-color:#f1cbb5;color:#a44217;background:#fffaf6}
+    .sort-row{display:flex;align-items:center;gap:12px;margin-top:10px;min-height:32px}.sort-label{font-size:11px;color:var(--muted);flex-shrink:0}.sort-options{display:flex;gap:6px;flex-wrap:wrap}.sort-choice{position:relative;cursor:pointer}.sort-choice input{position:absolute;opacity:0;width:1px;height:1px;margin:0}.sort-choice span{display:block;padding:5px 10px;border:1px solid transparent;border-radius:16px;font-size:12px;line-height:20px;color:#747079}.sort-choice:hover span{color:#a44217;background:#fff7f2}.sort-choice input:checked+span{background:#fff0e5;border-color:#f6d7c2;color:#a44217;font-weight:500}.sort-choice input:focus-visible+span{outline:2px solid var(--orange);outline-offset:1px}
     .filter-options{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;min-height:32px}.learning-check{display:flex;align-items:center;gap:7px;min-height:32px;color:#66636a;font-size:12px;cursor:pointer;width:fit-content}.learning-check input{width:15px;height:15px;margin:0;accent-color:var(--orange);cursor:pointer}.filter-options .reset-filters{font-size:11px;text-decoration:none;white-space:nowrap}.filter-options .reset-filters:hover{text-decoration:underline}
     .status{font-size:11px;color:#747079;margin-top:7px;min-height:17px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.status.error{color:#a33327}.status.quiet-status{position:absolute;width:1px;height:1px;min-height:0;margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
     .summary{padding:5px 16px 10px;font-size:11px;color:var(--muted);flex-shrink:0;gap:5px;flex-wrap:wrap}.summary b{color:var(--ink);font-size:15px;margin-right:3px;font-variant-numeric:tabular-nums}.summary .reset-filters{font-size:11px}.list{flex:1;min-height:0;overflow:auto;padding:0 12px 8px;overscroll-behavior:contain}
@@ -51,15 +51,11 @@
   <dialog aria-modal="false" id="dd-rp-dialog" aria-labelledby="dd-rp-title"><div class="shell">
     <header><div class="top"><div class="heading"><button class="drag-handle" aria-label="移动知识红包位置" title="拖动移动 · 方向键微调 · Home 恢复位置"><svg viewBox="0 0 18 14" fill="currentColor" aria-hidden="true"><circle cx="5" cy="3" r="1.5"/><circle cx="12" cy="3" r="1.5"/><circle cx="5" cy="7" r="1.5"/><circle cx="12" cy="7" r="1.5"/><circle cx="5" cy="11" r="1.5"/><circle cx="12" cy="11" r="1.5"/></svg></button><div><h1 id="dd-rp-title">知识红包</h1><p class="intro">已领取 · 课程红包</p></div></div><div class="actions"><button class="primary refresh" aria-label="刷新红包">刷新</button><button class="quiet cancel" hidden>停止</button><button class="collapse" aria-label="收起知识红包" title="收起为浮条"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header>
     <div class="tools"><div class="search-row"><input class="search" type="search" aria-label="搜索文章或课程" placeholder="搜索文章或课程" autofocus></div>
-    <div class="status-tabs" role="radiogroup" aria-label="红包状态">
-      <label class="status-choice"><input type="radio" name="dd-rights" value="active" checked><span>有效红包</span></label>
-      <label class="status-choice"><input type="radio" name="dd-rights" value="all"><span>全部</span></label>
-      <label class="status-choice"><input type="radio" name="dd-rights" value="expired"><span>已失效</span></label>
-    </div>
-    <div class="filters" id="dd-rp-filters">
-      <select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select>
-      <select class="sort" aria-label="排序"><option value="expiry">即将到期</option><option value="recent">最近领取</option></select>
-    </div>
+    <div class="filters" id="dd-rp-filters"><select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select></div>
+    <div class="sort-row"><span class="sort-label" id="dd-sort-label">排序</span><div class="sort-options" role="radiogroup" aria-labelledby="dd-sort-label">
+      <label class="sort-choice"><input type="radio" name="dd-sort" value="expiry" checked><span>即将到期</span></label>
+      <label class="sort-choice"><input type="radio" name="dd-sort" value="recent"><span>最近领取</span></label>
+    </div></div>
     <div class="filter-options"><label class="learning-check"><input class="hide-completed" type="checkbox">隐藏已学完</label><button class="quiet reset-filters" aria-label="重置筛选" hidden>重置</button></div>
     <div class="status quiet-status" role="status" aria-live="polite">打开后自动读取已领取的课程红包。</div></div>
     <div class="summary"><span><b class="count">0</b>篇<span class="count-context">有效红包</span></span><span class="stamp">尚未刷新</span></div><div class="list" aria-label="知识红包列表"></div>
@@ -69,7 +65,7 @@
   const $ = selector => shadow.querySelector(selector);
   let account = '', items = [], updatedAt = 0, cursor = 0, hasMore = false, busy = false, reading = false, cancelled = false, opening = false;
   let visited = new Set();
-  let syncedAt = 0, rightsFilter = 'active';
+  let syncedAt = 0, sortOrder = 'expiry';
   const autoAttempts = new Map();
   const key = id => `redpacket:v2:${id}`;
   const positionKey = 'redpacket:widget-position';
@@ -140,7 +136,7 @@
     $('.list').setAttribute('aria-busy', String(value));
   }
   function resetFilters() {
-    $('.search').value = ''; $('.course-filter').value = ''; rightsFilter = 'active'; $('.sort').value = 'expiry'; $('.hide-completed').checked = false; persistLearningFilter();
+    $('.search').value = ''; $('.course-filter').value = ''; sortOrder = 'expiry'; $('.hide-completed').checked = false; persistLearningFilter();
     $('.list').scrollTop = 0; draw(); $('.search').focus();
   }
   function closePanel(restoreFocus = true) {
@@ -152,18 +148,19 @@
     const validCount = items.filter(i => i.status === 'active').length;
     $('.dock-count').hidden = !account; $('.dock-count').textContent = `${validCount} 篇`;
     $('.launch').setAttribute('aria-label', account ? `展开知识红包，${validCount} 篇有效` : '展开知识红包');
-    const filtered = Boolean($('.search').value.trim() || $('.course-filter').value || rightsFilter !== 'active' || $('.hide-completed').checked || $('.sort').value !== 'expiry');
+    const selected = $('.course-filter').value;
+    const courses = [...new Set(items.filter(i => i.status === 'active').map(i => i.course))].sort();
+    $('.course-filter').replaceChildren(new Option('全部课程', ''));
+    for (const name of courses) $('.course-filter').append(new Option(name, name));
+    $('.course-filter').value = courses.includes(selected) ? selected : '';
+    const course = $('.course-filter').value;
+    if (course) $('.course-filter').title = course; else $('.course-filter').removeAttribute('title');
+    $('.course-filter').classList.toggle('is-filtered', Boolean(course));
+    for (const radio of shadow.querySelectorAll('[name="dd-sort"]')) radio.checked = radio.value === sortOrder;
+    const filtered = Boolean($('.search').value.trim() || course || $('.hide-completed').checked || sortOrder !== 'expiry');
     $('.reset-filters').hidden = !filtered;
     $('.count-context').textContent = filtered ? '筛选结果' : '有效红包';
-    const selected = $('.course-filter').value;
-    $('.course-filter').replaceChildren(new Option('全部课程', ''));
-    for (const name of [...new Set(items.map(i => i.course))].sort()) $('.course-filter').append(new Option(name, name));
-    $('.course-filter').value = selected;
-    if (selected) $('.course-filter').title = selected; else $('.course-filter').removeAttribute('title');
-    $('.course-filter').classList.toggle('is-filtered', Boolean(selected));
-    $('.sort').classList.toggle('is-filtered', $('.sort').value !== 'expiry');
-    for (const radio of shadow.querySelectorAll('[name="dd-rights"]')) radio.checked = radio.value === rightsFilter;
-    const rows = C.filter(items, { query: $('.search').value, course: $('.course-filter').value, status: rightsFilter, sort: $('.sort').value, hideCompleted: $('.hide-completed').checked });
+    const rows = C.filter(items, { query: $('.search').value, course: $('.course-filter').value, status: 'active', sort: sortOrder, hideCompleted: $('.hide-completed').checked });
     $('.count').textContent = String(rows.length); $('.list').replaceChildren();
     $('.more').hidden = !hasMore;
     $('.stamp').textContent = updatedAt ? `上次核验 ${formatTime(updatedAt)}` : '尚未刷新';
@@ -330,10 +327,10 @@
   $('.cancel').addEventListener('click', () => { cancelled = true; status('正在停止，将保留已完成的核验结果…'); });
   $('.reset-filters').addEventListener('click', resetFilters);
   $('.hide-completed').addEventListener('change', () => { persistLearningFilter(); $('.list').scrollTop = 0; draw(); });
-  for (const radio of shadow.querySelectorAll('[name="dd-rights"]')) radio.addEventListener('change', () => {
-    if (radio.checked) { rightsFilter = radio.value; $('.list').scrollTop = 0; draw(); }
+  for (const radio of shadow.querySelectorAll('[name="dd-sort"]')) radio.addEventListener('change', () => {
+    if (radio.checked) { sortOrder = radio.value; $('.list').scrollTop = 0; draw(); }
   });
-  for (const selector of ['.search', '.course-filter', '.sort']) $(selector).addEventListener('input', () => { $('.list').scrollTop = 0; draw(); });
+  for (const selector of ['.search', '.course-filter']) $(selector).addEventListener('input', () => { $('.list').scrollTop = 0; draw(); });
   $('.clear').addEventListener('click', () => { $('.clear-confirm').hidden = false; $('.cancel-clear').focus(); });
   $('.cancel-clear').addEventListener('click', () => { $('.clear-confirm').hidden = true; $('.clear').focus(); });
   $('.confirm-clear').addEventListener('click', async () => {
