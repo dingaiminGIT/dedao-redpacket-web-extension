@@ -177,8 +177,8 @@ test('reading queue preserves filtered order and keeps the completed current art
   const queue = C.readingQueue({ account: 'own', items: C.filter(rows, { course: '课程', sort: 'recent' }), hideCompleted: true });
   queue.items[0].completed = true;
   assert.deepEqual(queue.items.map(i => i.articleId), [2, 1]);
-  assert.deepEqual(C.readingState(queue, 'own', rows[1].enid), { index: 0, next: 1, total: 2 });
-  assert.deepEqual(C.readingState(C.readingQueue(queue), 'own', rows[0].enid), { index: 1, next: -1, total: 2 });
+  assert.deepEqual(C.readingState(queue, 'own', rows[1].enid), { index: 0, previous: -1, next: 1, total: 2 });
+  assert.deepEqual(C.readingState(C.readingQueue(queue), 'own', rows[0].enid), { index: 1, previous: 0, next: -1, total: 2 });
   assert.equal(C.readingState(queue, 'another-account', rows[1].enid), null);
   assert.equal(C.readingState(queue, 'own', rows[2].enid), null);
 });
@@ -202,4 +202,29 @@ test('reading queues whitelist metadata, deduplicate IDs and reject malformed qu
   assert.equal(JSON.stringify(queue).includes('private'), false);
   assert.equal(queue.url, undefined);
   for (const value of [null, {}, { account: 'own', items: [] }, { account: 5, items: [{}] }]) assert.throws(() => C.readingQueue(value), /阅读列表/);
+});
+
+
+test('previous article allows rereading completed entries with hide-completed enabled', () => {
+  const queue = C.readingQueue({ account: 'own', hideCompleted: true, items: [
+    { enid: 'ArticleToken1111', status: 'active', completed: true },
+    { enid: 'ArticleToken2222', status: 'active', completed: false }
+  ] });
+  assert.equal(C.readingState(queue, 'own', 'ArticleToken2222').previous, 0);
+  assert.equal(C.readingState(queue, 'own', 'ArticleToken1111').previous, -1);
+  assert.equal(C.readingState(queue, 'own', 'ArticleToken1111').next, 1);
+});
+test('previous article chooses nearest valid entry and stops at the start without wrapping', () => {
+  const queue = C.readingQueue({ account: 'own', items: [
+    { enid: 'ArticleToken1111', status: 'active' },
+    { enid: 'ArticleToken2222', status: 'active', completed: true },
+    { enid: 'ArticleToken3333', status: 'expired' },
+    { enid: 'ArticleToken4444', status: 'active', expireAt: 1 },
+    { enid: 'ArticleToken5555', status: 'active' }
+  ] });
+  assert.equal(C.readingState(queue, 'own', 'ArticleToken5555').previous, 1);
+  queue.items[1].status = 'expired';
+  assert.equal(C.readingState(queue, 'own', 'ArticleToken5555').previous, 0);
+  queue.items[0].status = 'expired';
+  assert.equal(C.readingState(queue, 'own', 'ArticleToken5555').previous, -1);
 });

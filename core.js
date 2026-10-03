@@ -89,7 +89,13 @@
     const index = queue.items.findIndex(i => i.enid === currentEnid);
     if (index < 0) return null;
     const next = queue.items.findIndex((i, n) => n > index && i.status === 'active' && (!i.expireAt || i.expireAt > now) && (!queue.hideCompleted || i.completed !== true));
-    return { index, next, total: queue.items.length };
+    let previous = -1;
+    // Backtracking is for rereading: do not hide completed entries in this direction.
+    for (let n = index - 1; n >= 0; n--) {
+      const item = queue.items[n];
+      if (item.status === 'active' && (!item.expireAt || item.expireAt > now)) { previous = n; break; }
+    }
+    return { index, previous, next, total: queue.items.length };
   }
   function hideCompletedPreference(saved) {
     return typeof saved?.hideCompleted === 'boolean' ? saved.hideCompleted : saved?.learning === 'incomplete';

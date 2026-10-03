@@ -25,7 +25,7 @@
     *{box-sizing:border-box}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:wait;opacity:.55}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
     .dock{position:fixed;right:20px;top:84px;z-index:2147483645;width:52px;border:1px solid #f0d9cc;border-radius:22px;background:#fffaf6;box-shadow:0 4px 20px #38221418;overflow:hidden;text-align:center}
     .launch{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;border:0;background:transparent;color:#ae3d0c;padding:12px 4px 5px;font-size:12px;font-weight:600;line-height:1.4}.launch:hover,.collapse:hover{background:#ffebdd}.launch svg{width:20px;height:20px}.dock-label{font-size:11px;letter-spacing:1px}.dock-count{font-size:13px;font-variant-numeric:tabular-nums}
-    .reading-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 16px;background:#fff7f2;border-bottom:1px solid #f0e4da;flex-shrink:0}.reading-progress{font-size:11px;color:#8a6d5d}.next{border:1px solid #f0d9cc;border-radius:8px;background:#fff;color:#aa3d0e;font-size:12px;padding:5px 9px;white-space:nowrap}.next:disabled{cursor:default}.dock-reading{border-top:1px solid #f0e4da;margin-top:6px;padding-top:6px}.dock .next{border:0;background:transparent;font-size:11px;padding:5px 0;width:100%}.dock .reading-progress{font-size:10px}.dock .next:hover:not(:disabled){background:#ffebdd}
+    .reading-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 16px;background:#fff7f2;border-bottom:1px solid #f0e4da;flex-shrink:0}.reading-progress{font-size:11px;color:#8a6d5d}.previous,.next{border:1px solid #f0d9cc;border-radius:8px;background:#fff;color:#aa3d0e;font-size:12px;padding:5px 9px;white-space:nowrap}.previous:disabled,.next:disabled{cursor:default}.dock-reading{border-top:1px solid #f0e4da;margin-top:6px;padding-top:6px}.dock .previous,.dock .next{border:0;background:transparent;font-size:11px;padding:5px 0;width:100%}.dock .reading-progress{font-size:10px}.dock .previous:hover:not(:disabled),.dock .next:hover:not(:disabled){background:#ffebdd}
     .drag-handle{border:0;background:none;color:#bda394;cursor:grab;touch-action:none;user-select:none;padding:6px;line-height:1}.drag-handle svg{width:18px;height:14px;display:block}.dock .drag-handle{display:flex;justify-content:center;width:100%;padding:7px 0 10px}.drag-handle:hover{color:#a44217}.heading{display:flex;align-items:center;gap:7px;min-width:0}.heading .drag-handle{padding:6px 0;margin-left:-5px}.dragging,.dragging *{cursor:grabbing!important;user-select:none!important}
     dialog{position:fixed;inset:auto;top:84px;right:20px;z-index:2147483645;width:min(380px,calc(100vw - 24px));height:min(560px,calc(100dvh - 24px));max-width:none;max-height:none;margin:0;padding:0;border:1px solid #f0d9cc;border-radius:16px;background:#fafafa;color:var(--ink);box-shadow:0 8px 32px #38221424;overflow:hidden}
     .shell{height:100%;display:flex;flex-direction:column}header{padding:12px 16px;border-bottom:1px solid var(--line);background:#fff;flex-shrink:0;cursor:grab;touch-action:none;user-select:none}
@@ -48,10 +48,10 @@
     @media(max-width:420px){.actions button{padding-left:8px;padding-right:8px}}
     @media(max-height:540px){dialog{overflow:auto}.shell{height:auto;min-height:100%}.tools{max-height:none;overflow:visible}.list{flex:none;min-height:120px;max-height:240px}}
   </style>
-  <div class="dock"><button class="launch" aria-label="展开知识红包" title="展开知识红包" aria-haspopup="dialog" aria-controls="dd-rp-dialog" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg><span class="dock-label">知识<br>红包</span><span class="dock-count" hidden></span></button><div class="dock-reading" hidden><div class="reading-progress"></div><button class="next">下一篇</button></div><button class="drag-handle" aria-label="移动知识红包位置" title="拖动移动 · 方向键微调 · Home 恢复位置"><svg viewBox="0 0 18 14" fill="currentColor" aria-hidden="true"><circle cx="5" cy="3" r="1.5"/><circle cx="12" cy="3" r="1.5"/><circle cx="5" cy="7" r="1.5"/><circle cx="12" cy="7" r="1.5"/><circle cx="5" cy="11" r="1.5"/><circle cx="12" cy="11" r="1.5"/></svg></button></div>
+  <div class="dock"><button class="launch" aria-label="展开知识红包" title="展开知识红包" aria-haspopup="dialog" aria-controls="dd-rp-dialog" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg><span class="dock-label">知识<br>红包</span><span class="dock-count" hidden></span></button><div class="dock-reading" hidden><button class="previous">上一篇</button><div class="reading-progress"></div><button class="next">下一篇</button></div><button class="drag-handle" aria-label="移动知识红包位置" title="拖动移动 · 方向键微调 · Home 恢复位置"><svg viewBox="0 0 18 14" fill="currentColor" aria-hidden="true"><circle cx="5" cy="3" r="1.5"/><circle cx="12" cy="3" r="1.5"/><circle cx="5" cy="7" r="1.5"/><circle cx="12" cy="7" r="1.5"/><circle cx="5" cy="11" r="1.5"/><circle cx="12" cy="11" r="1.5"/></svg></button></div>
   <dialog aria-modal="false" id="dd-rp-dialog" aria-labelledby="dd-rp-title"><div class="shell">
     <header><div class="top"><div class="heading"><button class="drag-handle" aria-label="移动知识红包位置" title="拖动移动 · 方向键微调 · Home 恢复位置"><svg viewBox="0 0 18 14" fill="currentColor" aria-hidden="true"><circle cx="5" cy="3" r="1.5"/><circle cx="12" cy="3" r="1.5"/><circle cx="5" cy="7" r="1.5"/><circle cx="12" cy="7" r="1.5"/><circle cx="5" cy="11" r="1.5"/><circle cx="12" cy="11" r="1.5"/></svg></button><div><h1 id="dd-rp-title">知识红包</h1><p class="intro">已领取 · 课程红包</p></div></div><div class="actions"><button class="primary refresh" aria-label="刷新红包">刷新</button><button class="quiet cancel" hidden>停止</button><button class="collapse" aria-label="收起知识红包" title="收起为浮条"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div></div></header>
-    <div class="reading-nav" hidden><span class="reading-progress"></span><button class="next">下一篇 →</button></div>
+    <div class="reading-nav" hidden><button class="previous">← 上一篇</button><span class="reading-progress"></span><button class="next">下一篇 →</button></div>
     <div class="tools"><div class="search-row"><input class="search" type="search" aria-label="搜索文章或课程" placeholder="搜索文章或课程" autofocus></div>
     <div class="filters" id="dd-rp-filters"><select class="course-filter" aria-label="筛选课程"><option value="">全部课程</option></select></div>
     <div class="sort-row"><span class="sort-label" id="dd-sort-label">排序</span><div class="sort-options" role="radiogroup" aria-labelledby="dd-sort-label">
@@ -68,7 +68,7 @@
   let account = '', items = [], updatedAt = 0, cursor = 0, hasMore = false, busy = false, reading = false, cancelled = false, opening = false;
   let visited = new Set();
   let syncedAt = 0, sortOrder = 'expiry';
-  let readingQueue = null;
+  let readingQueue = null, navigationDirection = '';
   const autoAttempts = new Map();
   const key = id => `redpacket:v2:${id}`;
   const positionKey = 'redpacket:widget-position';
@@ -160,11 +160,16 @@
     for (const el of shadow.querySelectorAll('.reading-nav,.dock-reading')) el.hidden = !state;
     if (!state) return;
     for (const el of shadow.querySelectorAll('.reading-progress')) el.textContent = `${el.closest('.reading-nav') ? '本次阅读 · ' : ''}${state.index + 1} / ${state.total}`;
-    for (const button of shadow.querySelectorAll('.next')) {
-      button.disabled = reading || state.next < 0;
-      button.textContent = reading ? '核验中…' : state.next < 0 ? '已到末篇' : button.closest('.reading-nav') ? '下一篇 →' : '下一篇';
-      button.title = state.next < 0 ? '本次阅读列表已到末尾，可展开面板选择其他红包' : `下一篇：${readingQueue.items[state.next].title}`;
-      button.setAttribute('aria-label', button.title);
+    for (const direction of ['previous', 'next']) {
+      const label = direction === 'previous' ? '上一篇' : '下一篇';
+      const boundary = direction === 'previous' ? '首篇' : '末篇';
+      for (const button of shadow.querySelectorAll(`.${direction}`)) {
+        button.disabled = reading || state[direction] < 0;
+        const text = button.closest('.reading-nav') ? direction === 'previous' ? `← ${label}` : `${label} →` : label;
+        button.textContent = navigationDirection === direction ? '核验中…' : state[direction] < 0 ? `已到${boundary}` : text;
+        button.title = state[direction] < 0 ? `本次阅读列表已到${boundary}，可展开面板选择其他红包` : `${label}：${readingQueue.items[state[direction]].title}`;
+        button.setAttribute('aria-label', button.title);
+      }
     }
   }
   function draw() {
@@ -343,10 +348,11 @@
     } catch (e) { status(e.message, true); }
     finally { reading = false; if (!syncing) setBusy(false); draw(); }
   }
-  async function nextArticle() {
+  async function navigateArticle(direction) {
+    if (!['previous', 'next'].includes(direction)) return;
     if (reading || !readingQueue) return;
     const current = currentArticle(), expectedAccount = readingQueue.account, syncing = busy;
-    reading = true;
+    reading = true; navigationDirection = direction;
     if (!syncing) setBusy(true);
     drawNavigation();
     try {
@@ -359,27 +365,27 @@
         return latest ? C.merge([i], [latest])[0] : i;
       });
       let state;
-      while ((state = C.readingState(readingQueue, account, current))?.next >= 0) {
-        const seed = readingQueue.items[state.next];
+      while ((state = C.readingState(readingQueue, account, current))?.[direction] >= 0) {
+        const seed = readingQueue.items[state[direction]];
         const verified = await rpc('article', seed);
-        readingQueue.items[state.next] = verified;
+        readingQueue.items[state[direction]] = verified;
         items = C.merge(items, [verified]); await save(expectedAccount);
         await readingMessage('reading-save', { queue: readingQueue });
-        if (currentArticle() !== current) throw Error('当前文章已改变，请重新点击下一篇');
-        if (verified.status !== 'active' || (readingQueue.hideCompleted && verified.completed === true)) continue;
+        if (currentArticle() !== current) throw Error('当前文章已改变，请重新点击切换文章');
+        if (verified.status !== 'active' || (direction === 'next' && readingQueue.hideCompleted && verified.completed === true)) continue;
         location.assign(`https://www.dedao.cn/course/article?id=${encodeURIComponent(verified.enid)}`);
         return;
       }
       await readingMessage('reading-save', { queue: readingQueue });
-      status('本次阅读列表已到末尾，可展开面板选择其他红包。');
+      status(`本次阅读列表已到${direction === 'previous' ? '首篇' : '末篇'}，可展开面板选择其他红包。`);
     } catch (e) {
       // Keep the current article on request failure, with a visible retryable error.
       if (!$('dialog').open) $('dialog').show();
       $('.dock').hidden = true; $('.launch').setAttribute('aria-expanded', 'true'); placeWidget();
-      status(/fetch|network/i.test(e.message) ? '网络连接异常，当前文章已保留，请重试下一篇。' : e.message, true);
-    } finally { reading = false; if (!syncing) setBusy(false); draw(); }
+      status(/fetch|network/i.test(e.message) ? '网络连接异常，当前文章已保留，请重试。' : e.message, true);
+    } finally { reading = false; navigationDirection = ''; if (!syncing) setBusy(false); draw(); }
   }
-  for (const button of shadow.querySelectorAll('.next')) button.addEventListener('click', nextArticle);
+  for (const direction of ['previous', 'next']) for (const button of shadow.querySelectorAll(`.${direction}`)) button.addEventListener('click', () => navigateArticle(direction));
   for (const event of ['popstate', 'hashchange']) window.addEventListener(event, () => { drawNavigation(); placeWidget(); });
   $('.launch').addEventListener('click', () => $('dialog').open ? closePanel() : open());
   $('.collapse').addEventListener('click', () => closePanel());
