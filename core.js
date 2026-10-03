@@ -72,6 +72,25 @@
     return items.filter(i => (!hideCompleted || i.completed !== true) && (learning === 'all' || (learning === 'completed' ? i.completed === true : i.completed === false)) && (!course || i.course === course) && (status === 'all' || i.status === status) && (!term || `${i.title} ${i.course}`.toLocaleLowerCase().includes(term)))
       .sort((a, b) => sort === 'recent' ? b.seenAt - a.seenAt : (a.expireAt || Infinity) - (b.expireAt || Infinity) || b.seenAt - a.seenAt);
   }
+  // A tab keeps the order selected when reading started, even after the current
+  // article becomes completed and disappears from the filtered list.
+  function readingQueue(value) {
+    if (!value || typeof value.account !== 'string' || !value.account || value.account.length > 160 || !Array.isArray(value.items)) throw Error('阅读列表无效，请从红包列表重新开始阅读');
+    const seen = new Set();
+    const entries = value.items.slice(0, 5000).map(i => cachedItem(i)).filter(i => {
+      if (!i || seen.has(itemKey(i))) return false;
+      seen.add(itemKey(i)); return true;
+    });
+    if (!entries.length) throw Error('阅读列表为空，请从红包列表重新开始阅读');
+    return { account: value.account, items: entries, hideCompleted: value.hideCompleted === true };
+  }
+  function readingState(queue, account, currentEnid, now = Date.now()) {
+    if (!queue || queue.account !== account || !enid(currentEnid)) return null;
+    const index = queue.items.findIndex(i => i.enid === currentEnid);
+    if (index < 0) return null;
+    const next = queue.items.findIndex((i, n) => n > index && i.status === 'active' && (!i.expireAt || i.expireAt > now) && (!queue.hideCompleted || i.completed !== true));
+    return { index, next, total: queue.items.length };
+  }
   function hideCompletedPreference(saved) {
     return typeof saved?.hideCompleted === 'boolean' ? saved.hideCompleted : saved?.learning === 'incomplete';
   }
@@ -100,7 +119,7 @@
     const recent = (stamp, interval) => Number.isFinite(stamp) && stamp > 0 && stamp <= now && now - stamp < interval;
     return !recent(syncedAt, 300000) && !recent(attemptedAt, 60000);
   }
-  const api = { clean, enid, articleId, received, receivedPage, article, merge, cachedItem, filter, hideCompletedPreference, widgetPosition, nextCursor, runLimited, shouldAutoRefresh };
+  const api = { clean, enid, articleId, received, receivedPage, article, merge, cachedItem, filter, readingQueue, readingState, hideCompletedPreference, widgetPosition, nextCursor, runLimited, shouldAutoRefresh };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.DDRedpacketCore = Object.freeze(api);
 })(globalThis);

@@ -167,3 +167,39 @@ test('completion recognizes official read, audio and video flags without inferri
   assert.equal(partial.completed, false); assert.equal(C.filter([partial], { hideCompleted: true }).length, 1);
   assert.equal(C.article({ is_red_packet_try: true, article_info: { is_read: 'true' } }, { enid: id }).completed, null);
 });
+
+test('reading queue preserves filtered order and keeps the completed current article as anchor', () => {
+  const rows = [
+    { articleId: 1, enid: 'ArticleToken1111', title: '一', course: '课程', status: 'active', seenAt: 1, completed: false },
+    { articleId: 2, enid: 'ArticleToken2222', title: '二', course: '课程', status: 'active', seenAt: 2, completed: false },
+    { articleId: 3, enid: 'ArticleToken3333', title: '三', course: '其他', status: 'active', seenAt: 3 }
+  ];
+  const queue = C.readingQueue({ account: 'own', items: C.filter(rows, { course: '课程', sort: 'recent' }), hideCompleted: true });
+  queue.items[0].completed = true;
+  assert.deepEqual(queue.items.map(i => i.articleId), [2, 1]);
+  assert.deepEqual(C.readingState(queue, 'own', rows[1].enid), { index: 0, next: 1, total: 2 });
+  assert.deepEqual(C.readingState(C.readingQueue(queue), 'own', rows[0].enid), { index: 1, next: -1, total: 2 });
+  assert.equal(C.readingState(queue, 'another-account', rows[1].enid), null);
+  assert.equal(C.readingState(queue, 'own', rows[2].enid), null);
+});
+test('next article skips expired and completed entries without wrapping or skipping unknown learning state', () => {
+  const queue = C.readingQueue({ account: 'own', hideCompleted: true, items: [
+    { enid: 'CurrentArticle123', status: 'active' },
+    { enid: 'ExpiredArticle12', status: 'expired' },
+    { enid: 'ElapsedArticle12', status: 'active', expireAt: 10 },
+    { enid: 'LearnedArticle12', status: 'active', completed: true },
+    { articleId: 5, title: '尚未解析网页编号', status: 'active', completed: null }
+  ] });
+  assert.equal(C.readingState(queue, 'own', 'CurrentArticle123').next, 4);
+  queue.items[4].status = 'expired';
+  assert.equal(C.readingState(queue, 'own', 'CurrentArticle123').next, -1);
+  queue.hideCompleted = false;
+  assert.equal(C.readingState(queue, 'own', 'CurrentArticle123').next, 3);
+});
+test('reading queues whitelist metadata, deduplicate IDs and reject malformed queues', () => {
+  const queue = C.readingQueue({ account: 'own', url: 'https://evil.test', items: [{ articleId: 1, status: 'active', html: 'private' }, { articleId: 1 }, null, { enid: '../bad' }] });
+  assert.equal(queue.items.length, 1);
+  assert.equal(JSON.stringify(queue).includes('private'), false);
+  assert.equal(queue.url, undefined);
+  for (const value of [null, {}, { account: 'own', items: [] }, { account: 5, items: [{}] }]) assert.throws(() => C.readingQueue(value), /阅读列表/);
+});

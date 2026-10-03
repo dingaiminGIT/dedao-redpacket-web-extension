@@ -15,7 +15,7 @@ function fixture({ response, httpStatus = 200 } = {}) {
   context.chrome = {
     action: { onClicked: { addListener(fn) { action = fn; } } },
     runtime: { onMessage: { addListener(fn) { receive = fn; } } },
-    tabs: { async create(options) { calls.push(['create', options]); return { id: 7 }; }, async update(id, options) { calls.push(['update', id, options, Boolean(state['import:7'])]); }, onRemoved: { addListener(fn) { removed = fn; } } },
+    tabs: { async create(options) { calls.push(['create', options]); return { id: 7 }; }, async update(id, options) { calls.push(['update', id, options, Boolean(state['reading:7'])]); }, async remove(id) { calls.push(['remove', id]); }, onRemoved: { addListener(fn) { removed = fn; } } },
     storage: { session: { async get(key) { return { [key]: state[key] }; }, async set(data) { Object.assign(state, data); }, async remove(key) { delete state[key]; } } }
   };
   vm.runInContext(fs.readFileSync(path.join(base, 'background.js'), 'utf8'), context);
@@ -53,4 +53,35 @@ test('toolbar opens the received list and removed import commands do nothing', a
   const count = f.calls.length;
   assert.equal(f.receive({ type: 'import-link', url: 'https://d.dedao.cn/ExamplePacket1234' }, { url: 'https://www.dedao.cn/', tab: { id: 7 } }, () => assert.fail('removed command')), undefined);
   assert.equal(f.calls.length, count);
+});
+
+const sampleQueue = { account: 'own', hideCompleted: true, items: [{ enid: 'ArticleToken12345', articleId: 1, title: '文章', status: 'active', token: 'SECRET' }] };
+test('reading opens a fixed official URL only after storing its tab-specific queue', async () => {
+  const f = fixture();
+  const result = await f.send({ type: 'reading-open', queue: sampleQueue, enid: 'ArticleToken12345', url: 'https://evil.test' });
+  assert.equal(result.result, true);
+  assert.equal(f.calls[0][1].url, 'about:blank');
+  assert.equal(f.calls[1][2].url, 'https://www.dedao.cn/course/article?id=ArticleToken12345');
+  assert.equal(f.calls[1][3], true);
+  assert.equal(JSON.stringify(f.state).includes('SECRET'), false);
+  assert.equal((await f.send({ type: 'reading-get' })).result.account, 'own');
+  const another = await new Promise(resolve => f.receive({ type: 'reading-get' }, { url: 'https://www.dedao.cn/', tab: { id: 8 } }, resolve));
+  assert.equal(another.result, null);
+});
+test('reading state survives reload requests and is cleared when tab closes or explicitly cleared', async () => {
+  const f = fixture();
+  await f.send({ type: 'reading-save', queue: sampleQueue });
+  assert.equal((await f.send({ type: 'reading-get' })).result.items.length, 1);
+  assert.equal((await f.send({ type: 'reading-get' })).result.items.length, 1);
+  await f.removed(7);
+  assert.equal((await f.send({ type: 'reading-get' })).result, null);
+  await f.send({ type: 'reading-save', queue: sampleQueue });
+  await f.send({ type: 'reading-clear' });
+  assert.equal((await f.send({ type: 'reading-get' })).result, null);
+});
+test('invalid or expired reading targets never open a tab', async () => {
+  const f = fixture();
+  for (const enid of ['../bad', 'UnknownArticle123']) assert.ok((await f.send({ type: 'reading-open', queue: sampleQueue, enid })).error);
+  assert.ok((await f.send({ type: 'reading-open', queue: { ...sampleQueue, items: [{ ...sampleQueue.items[0], status: 'expired' }] }, enid: 'ArticleToken12345' })).error);
+  assert.equal(f.calls.length, 0);
 });
