@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "得到知识红包伴侣",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "直接整理已领取的课程知识红包，无需先学习；显示官方到期日，并在得到网页阅读。",
   "permissions": [
     "storage"
@@ -25,7 +25,10 @@
         "bridge-main.js"
       ],
       "world": "MAIN",
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "exclude_matches": [
+        "https://www.dedao.cn/ebook/reader*"
+      ]
     },
     {
       "matches": [
@@ -35,7 +38,10 @@
         "core.js",
         "content.js"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "exclude_matches": [
+        "https://www.dedao.cn/ebook/reader*"
+      ]
     }
   ],
   "icons": {
